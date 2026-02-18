@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Master | PLATAFORMA NR-1{% endblock %}
+
+{% block extra_head %}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+  {% include "partials/sidebar.html" with active_menu="master-dashboard" is_master=True %}
+
+  <main class="content" data-page="master-dashboard" data-master-metrics-url="{% url 'master-metrics' %}">
+    <header class="content__header">
+      <div>
+        <h1 class="content__title">Painel master</h1>
+        <p class="content__subtitle">Visão geral das empresas cadastradas.</p>
+      </div>
+      <form method="post" action="{% url 'master-dashboard' %}" class="master-company-form">
+        {% csrf_token %}
+        <input type="hidden" name="next_url" value="{% url 'dashboard' %}" />
+        <div class="form-field">
+          <label for="master_company_id">Empresa</label>
+          <select id="master_company_id" name="company_id" required>
+            {% for company in companies %}
+              <option value="{{ company.id }}">{{ company.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+          <button class="btn btn--primary" type="submit" data-loading-text="Acessando...">Acessar</button>
+      </form>
+    </header>
+
+    {% if messages %}
+      <section class="stack-gap" style="margin-bottom: 16px;">
+        {% for message in messages %}
+          <div class="notice{% if message.tags %} notice--{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    <section class="grid master-metrics-grid">
+      <article class="card">
+        <p class="card__label">Empresas cadastradas</p>
+        <p class="card__value">{{ total_companies }}</p>
+      </article>
+      <article class="card">
+        <p class="card__label">Empresas ativas</p>
+        <p class="card__value">{{ active_companies }}</p>
+      </article>
+      <article class="card">
+        <p class="card__label">Campanhas</p>
+        <p class="card__value">{{ total_campaigns }}</p>
+      </article>
+      <article class="card">
+        <p class="card__label">Campanhas ativas</p>
+        <p class="card__value">{{ active_campaigns }}</p>
+      </article>
+      <article class="card">
+        <p class="card__label">Campanhas pausadas</p>
+        <p class="card__value">{{ paused_campaigns }}</p>
+      </article>
+      <article class="card">
+        <p class="card__label">Campanhas planejadas</p>
+        <p class="card__value">{{ planned_campaigns }}</p>
+      </article>
+      <article class="card">
+        <p class="card__label">Campanhas encerradas</p>
+        <p class="card__value">{{ finished_campaigns }}</p>
+      </article>
+    </section>
+
+    <section class="master-charts">
+      <article class="master-chart-card">
+        <div class="master-chart-loading" data-master-loading="history">
+          <span class="master-spinner" aria-hidden="true"></span>
+          Carregando...
+        </div>
+        <h2 class="master-chart-title">Histórico de avaliações</h2>
+        <canvas id="master-eval-history" height="120"></canvas>
+      </article>
+      <article class="master-chart-card">
+        <div class="master-chart-loading" data-master-loading="segments">
+          <span class="master-spinner" aria-hidden="true"></span>
+          Carregando...
+        </div>
+        <h2 class="master-chart-title">Distribuição por segmento</h2>
+        <div class="master-segment-grid">
+          <div>
+            <canvas id="master-segment-pie" width="280" height="280"></canvas>
+          </div>
+          <div class="master-segment-list" id="master-segment-list"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'js/dashboard_sidebar.js' %}"></script>
+{% endblock %}
