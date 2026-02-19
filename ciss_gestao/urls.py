@@ -15,8 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.contrib.auth.views import LogoutView
-from django.urls import path, include
+from django.contrib.auth.views import (
+    LogoutView,
+    PasswordResetCompleteView,
+    PasswordResetConfirmView,
+    PasswordResetDoneView,
+    PasswordResetView,
+)
+from django.urls import path, include, reverse_lazy
 from django.conf.urls.static import static
 from django.conf import settings
 
@@ -107,6 +113,38 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/login/', TenantLoginView.as_view(), name='login'),
     path('auth/logout/', LogoutView.as_view(), name='logout'),
+    path(
+        'auth/password-reset/',
+        PasswordResetView.as_view(
+            template_name='auth/password_reset.html',
+            email_template_name='registration/password_reset_email.html',
+            subject_template_name='registration/password_reset_subject.txt',
+            success_url=reverse_lazy('password_reset_done'),
+        ),
+        name='password_reset',
+    ),
+    path(
+        'auth/password-reset/done/',
+        PasswordResetDoneView.as_view(
+            template_name='auth/password_reset_done.html',
+        ),
+        name='password_reset_done',
+    ),
+    path(
+        'auth/password-reset/confirm/<uidb64>/<token>/',
+        PasswordResetConfirmView.as_view(
+            template_name='auth/password_reset_confirm.html',
+            success_url=reverse_lazy('password_reset_complete'),
+        ),
+        name='password_reset_confirm',
+    ),
+    path(
+        'auth/password-reset/complete/',
+        PasswordResetCompleteView.as_view(
+            template_name='auth/password_reset_complete.html',
+        ),
+        name='password_reset_complete',
+    ),
     path('auth/select-company/', CompanySelectView.as_view(), name='company-select'),
     path('master/', MasterDashboardView.as_view(), name='master-dashboard'),
     path('master/metrics/', MasterCompanyMetricsView.as_view(), name='master-metrics'),

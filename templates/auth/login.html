@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Login | PLATAFORMA NR-1{% endblock %}
+{% block title %}Login | NR01FACIL{% endblock %}
 
 {% block extra_head %}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,19 +12,19 @@
 
 {% block content %}
 <main class="auth-page">
-  <section class="auth-card auth-card--center">
+  <section class="auth-card">
+    <div class="auth-orb"></div>
     <header class="auth-card__header">
-      <div class="auth-brand auth-brand--center">
-        <img src="{% static 'img/logo.jpg' %}" alt="Logo" class="auth-brand__logo" />
-        <p class="auth-brand__name">PLATAFORMA NR-1</p>
+      <div class="auth-brand">
+        <p class="auth-brand__name">NR01FACIL</p>
       </div>
-      <h1 class="auth-title">Entrar</h1>
-      <p class="auth-subtitle">Insira suas credenciais para acessar sua conta.</p>
+      <h1 class="auth-title">Acesso</h1>
+      <p class="auth-subtitle">Conecte-se à sua área de trabalho NR-1.</p>
     </header>
 
-    {% if form.errors %}
-      <div class="auth-alert">E-mail ou senha invalidos.</div>
-    {% endif %}
+      {% if form.errors %}
+        <div class="auth-alert">E-mail ou senha invalidos.</div>
+      {% endif %}
 
     <form method="post" class="auth-form">
       {% csrf_token %}
@@ -39,15 +39,16 @@
       <div class="auth-row">
         <label class="auth-remember">
           <input type="checkbox" name="remember_me" />
-          <span>Lembrar-me</span>
+          <span>Lembrar esta sessão</span>
         </label>
-        <a class="auth-link" href="#" aria-disabled="true">Esqueci minha senha</a>
+          <a class="auth-link" href="{% url 'password_reset' %}">Redefinir acesso</a>
       </div>
-      <button type="submit" class="auth-submit" data-loading-text="Acessando...">Entrar</button>
+      <button type="submit" class="auth-submit" data-loading-text="Acessando...">Inicializar conexão</button>
       {% if next %}
         <input type="hidden" name="next" value="{{ next }}" />
       {% endif %}
     </form>
+    <p class="auth-footer">Novo por aqui? <a class="auth-link" href="#" aria-disabled="true">Fale com o suporte</a></p>
   </section>
 </main>
 {% endblock %}

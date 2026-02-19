@@ -1,10 +1,13 @@
 .auth-page {
   min-height: 100vh;
-  padding: 28px;
+  padding: 32px;
   display: grid;
   place-items: center;
   font-family: "Manrope", "Segoe UI", sans-serif;
-  background: #f5f7fb;
+  background: radial-gradient(circle at top, rgba(74, 106, 255, 0.15), transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(120, 196, 255, 0.1), transparent 55%),
+    #0a0a12;
+  color: #e2e8f0;
 }
 
 .auth-page * {
@@ -12,45 +15,45 @@
 }
 
 .auth-brand {
-  display: none;
-}
-
-.auth-brand--center {
   width: 100%;
-  justify-content: center;
-}
-
-.auth-brand__logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  object-fit: cover;
+  text-align: center;
 }
 
 .auth-brand__name {
   margin: 0;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  font-size: 0.78rem;
-  color: rgba(219, 232, 255, 0.85);
+  font-size: 1.1rem;
+  color: rgba(226, 232, 240, 0.95);
 }
 
 .auth-card {
   width: min(380px, 100%);
-  padding: 30px 28px 26px;
+  padding: 34px 30px 28px;
   display: grid;
   align-content: center;
   gap: 14px;
-  border-radius: 14px;
-  border: 1px solid #e6eaf2;
-  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
-  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 30px 60px rgba(2, 6, 23, 0.55);
+  background: linear-gradient(180deg, rgba(20, 24, 37, 0.92), rgba(12, 14, 22, 0.95));
+  animation: auth-rise 0.6s ease-out;
+  position: relative;
+  overflow: hidden;
 }
 
-.auth-card--center {
-  text-align: center;
+.auth-orb {
+  position: absolute;
+  top: -90px;
+  right: -80px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.4), transparent 60%);
+  filter: blur(2px);
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .auth-card__header h2 {
@@ -60,14 +63,14 @@
 }
 
 .auth-title {
-  margin: 4px 0 0;
-  color: #1f2a44;
+  margin: 8px 0 0;
+  color: #e2e8f0;
   font-size: 1.5rem;
 }
 
 .auth-card__header p {
   margin: 6px 0 0;
-  color: #6b7280;
+  color: rgba(148, 163, 184, 0.9);
 }
 
 .auth-subtitle {
@@ -75,9 +78,9 @@
 }
 
 .auth-alert {
-  border: 1px solid #fecdd3;
-  background: #fff1f2;
-  color: #9f1239;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fecdd3;
   border-radius: 12px;
   padding: 9px 12px;
   font-weight: 700;
@@ -95,24 +98,24 @@
 }
 
 .auth-field label {
-  color: #6b7280;
+  color: rgba(148, 163, 184, 0.9);
   font-weight: 700;
   font-size: 0.82rem;
 }
 
 .auth-field input {
   width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
   padding: 10px 12px;
   font: inherit;
-  color: #111827;
-  background: #f8fafc;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.6);
 }
 
 .auth-field input:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.8);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
@@ -129,7 +132,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #6b7280;
+  color: rgba(148, 163, 184, 0.9);
 }
 
 .auth-remember input {
@@ -139,7 +142,7 @@
 }
 
 .auth-link {
-  color: #6366f1;
+  color: #8ab4ff;
   text-decoration: none;
   font-weight: 700;
 }
@@ -149,21 +152,17 @@
   opacity: 0.7;
 }
 
-.auth-link--muted {
-  color: #6366f1;
-}
-
 .auth-submit {
   margin-top: 6px;
   border: 0;
-  border-radius: 9px;
-  padding: 10px 14px;
+  border-radius: 10px;
+  padding: 11px 14px;
   font: inherit;
   font-weight: 800;
   color: #ffffff;
   cursor: pointer;
-  background: #6366f1;
-  box-shadow: 0 12px 22px rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  box-shadow: 0 14px 26px rgba(79, 70, 229, 0.35);
 }
 
 .auth-submit[aria-busy="true"] {
@@ -171,8 +170,8 @@
 }
 
 .auth-footer {
-  margin: 6px 0 0;
-  color: #6b7280;
+  margin: 8px 0 0;
+  color: rgba(148, 163, 184, 0.9);
   font-size: 0.82rem;
   text-align: center;
 }
@@ -184,5 +183,16 @@
 
   .auth-card {
     padding: 26px 20px 22px;
+  }
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
