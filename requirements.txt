@@ -1,5 +1,5 @@
 Django==6.0.1
-psycopg[binary]==3.2.9
+psycopg[binary]
 google-genai>=0.8,<1.0
 Pillow==10.4.0
 qrcode[pil]==7.4.2
