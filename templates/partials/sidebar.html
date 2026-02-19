@@ -2,11 +2,15 @@
 <aside class="sidebar">
   <div class="brand">
     <div class="brand__logo">
-      <img src="{% static 'img/logo_vetorizada.png' %}" alt="Logo da empresa" />
+      {% if current_consultancy_logo_url %}
+        <img src="{{ current_consultancy_logo_url }}" alt="Logo da consultoria" />
+      {% else %}
+        <img src="{% static 'img/logo_vetorizada.png' %}" alt="Logo da empresa" />
+      {% endif %}
     </div>
     <div class="brand__text">
-      {% if is_master %}
-        <p class="brand__name">CISS CONSULTORIA</p>
+      {% if is_master or is_consultancy_owner %}
+        <p class="brand__name">{{ current_consultancy_name|default:"" }}</p>
       {% else %}
         <p class="brand__name">{{ current_company_name|default:"PLATAFORMA NR-1" }}</p>
       {% endif %}
@@ -30,7 +34,7 @@
   <div class="sidebar__divider" aria-hidden="true"></div>
 
   <nav class="menu" hx-boost="true" hx-target=".content" hx-select=".content" hx-swap="outerHTML" hx-push-url="true">
-    {% if is_master %}
+    {% if is_master or is_consultancy_owner %}
       <div class="menu__section-label">Menu Master</div>
       <a class="menu__item{% if active_menu == 'master-dashboard' %} is-active{% endif %}" href="{% url 'master-dashboard' %}">
         <svg class="menu__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 13h8V3H3v10Zm10 8h8V11h-8v10ZM3 21h8v-6H3v6Zm10-10h8V3h-8v8Z" fill="currentColor"/></svg>
@@ -56,7 +60,7 @@
         <span class="menu__text">Configurações</span>
       </a>
     {% endif %}
-    {% if not is_master %}
+    {% if not is_master and not is_consultancy_owner %}
         <div class="menu__section-label">Menu Empresa</div>
         <a class="menu__item{% if active_menu == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}" data-match-path="/dashboard/">
           <svg class="menu__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 13h8V3H3v10Zm10 8h8V11h-8v10ZM3 21h8v-6H3v6Zm10-10h8V3h-8v8Z" fill="currentColor"/></svg>
@@ -68,10 +72,10 @@
       <span class="menu__text">Empresas</span>
     </a> -->
     {% if can_manage_access %}
-      {% if is_master %}
+      {% if is_master or is_consultancy_owner %}
         <div class="menu__section-label">Menu Empresa</div>
       {% endif %}
-      {% if is_master and current_company_id %}
+      {% if current_company_id and is_master or current_company_id and is_consultancy_owner %}
         <a class="menu__item{% if active_menu == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}" data-match-path="/dashboard/">
           <svg class="menu__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 13h8V3H3v10Zm10 8h8V11h-8v10ZM3 21h8v-6H3v6Zm10-10h8V3h-8v8Z" fill="currentColor"/></svg>
           <span class="menu__text">Início</span>
@@ -128,10 +132,6 @@
           <path d="M12 12c2.76 0 5-2.3 5-5.1C17 4.1 14.76 2 12 2S7 4.1 7 6.9C7 9.7 9.24 12 12 12Z" stroke="currentColor" stroke-width="1.6" />
           <path d="M4 21c0-4.2 3.6-7.6 8-7.6s8 3.4 8 7.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
         </svg>
-      </div>
-      <div class="user-chip__text">
-        <strong>{{ user.get_full_name|default:user.username }}</strong>
-        <span>{{ user_role_label|default:"" }}</span>
       </div>
       <form method="post" action="{% url 'logout' %}" class="user-chip__logout">
         {% csrf_token %}

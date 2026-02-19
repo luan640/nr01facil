@@ -8,6 +8,57 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+  <style>
+    .logo-cropper {
+      display: grid;
+      gap: 12px;
+      max-height: calc(100vh - 210px);
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .logo-cropper__canvas-wrap {
+      width: min(360px, 100%);
+      margin: 0 auto;
+      border: 1px solid #dbe6f5;
+      border-radius: 14px;
+      padding: 10px;
+      background: #f8fbff;
+    }
+    .logo-cropper__canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      cursor: grab;
+      touch-action: none;
+      background: #fff;
+    }
+    .logo-cropper__canvas.is-dragging {
+      cursor: grabbing;
+    }
+    .logo-cropper__control {
+      display: grid;
+      gap: 6px;
+    }
+    .logo-cropper__control label {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #10233d;
+    }
+    .logo-cropper .form-actions {
+      position: sticky;
+      bottom: 0;
+      margin-top: 4px;
+      padding-top: 10px;
+      background: #fff;
+      border-top: 1px solid #dbe6f5;
+      z-index: 2;
+    }
+    .modal-card--logo-crop {
+      max-height: calc(100vh - 32px);
+      overflow: hidden;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -19,8 +70,52 @@
         <h1 class="content__title">Configurações</h1>
         <p class="content__subtitle">Defina os responsáveis e assinaturas exibidos no relatório PDF.</p>
       </div>
-      <button class="btn btn--primary" type="button" data-open-modal="create-technical-modal">Novo responsável</button>
     </header>
+
+    <section class="card" style="margin-bottom: 16px;">
+      <p class="card__label">Dados da consultoria</p>
+      <form method="post" action="{% url 'master-settings-consultancy-update' %}" class="form-grid" enctype="multipart/form-data" data-consultancy-profile-form>
+        {% csrf_token %}
+        <div class="form-field">
+          <label for="consultancy_name">Nome da empresa</label>
+          <input id="consultancy_name" name="name" required maxlength="255" value="{{ consultancy.name|default:'' }}" />
+        </div>
+        <div class="form-field">
+          <label for="consultancy_cnpj">CNPJ</label>
+          <input id="consultancy_cnpj" name="cnpj" maxlength="18" placeholder="00.000.000/0000-00" value="{{ consultancy.cnpj|default:'' }}" />
+        </div>
+        <div class="form-field">
+          <label for="consultancy_location">Localização</label>
+          <input id="consultancy_location" name="location" maxlength="255" placeholder="Fortaleza - CE" value="{{ consultancy.location|default:'' }}" />
+        </div>
+        <div class="form-field">
+          <label for="consultancy_access_link">Link de acesso (fixo e único)</label>
+          <input
+            id="consultancy_access_link"
+            value="{{ consultancy_access_url }}"
+            readonly
+            onclick="this.select();"
+          />
+        </div>
+        <div class="form-field">
+          <label for="consultancy_logo">Logo</label>
+          <input id="consultancy_logo" name="logo" type="file" accept="image/*" />
+          {% if consultancy.logo %}
+            <p style="margin-top: 8px;">
+              <img
+                src="{{ consultancy.logo.url }}"
+                alt="Logo da consultoria"
+                data-consultancy-logo-preview
+                style="max-height: 56px; width: auto;"
+              />
+            </p>
+          {% endif %}
+        </div>
+        <div class="form-actions form-actions--right">
+          <button class="btn btn--primary" type="submit" data-loading-text="Salvando...">Salvar</button>
+        </div>
+      </form>
+    </section>
 
     <section class="card" style="margin-bottom: 16px;">
       <p class="card__label">Assinatura do responsável pela avaliação</p>
@@ -94,6 +189,42 @@
             <button class="btn btn--light" type="button" data-close-modal>Cancelar</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" data-modal="consultancy-logo-crop-modal" data-no-backdrop-close aria-hidden="true">
+      <div class="modal-card modal-card--lg modal-card--logo-crop">
+        <div class="modal-card__header">
+          <h2>Ajustar logo da consultoria</h2>
+          <button type="button" class="modal-close" data-logo-crop-cancel>&times;</button>
+        </div>
+        <div class="logo-cropper">
+          <p>Posicione a imagem dentro do circulo.</p>
+          <div class="logo-cropper__canvas-wrap">
+            <canvas
+              class="logo-cropper__canvas"
+              width="320"
+              height="320"
+              data-logo-crop-canvas
+            ></canvas>
+          </div>
+          <div class="logo-cropper__control">
+            <label for="logo_crop_zoom">Zoom</label>
+            <input
+              id="logo_crop_zoom"
+              type="range"
+              min="1"
+              max="3"
+              step="0.01"
+              value="1"
+              data-logo-crop-zoom
+            />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn--light" data-logo-crop-cancel>Cancelar</button>
+            <button type="button" class="btn btn--primary" data-logo-crop-apply>Aplicar recorte</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>

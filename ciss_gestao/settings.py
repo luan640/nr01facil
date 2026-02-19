@@ -90,6 +90,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.tenancy.middleware.ConsultancyPathMiddleware',
     'apps.tenancy.middleware.CompanyContextMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -260,6 +261,7 @@ CACHES = {
 }
 
 TENANCY_COMPANY_HEADER = os.getenv('TENANCY_COMPANY_HEADER', 'X-Company-Id')
+PUBLIC_APP_URL = os.getenv('PUBLIC_APP_URL', 'http://127.0.0.1:8000').strip().rstrip('/')
 TENANCY_EXEMPT_PATH_PREFIXES = [
     '/admin/',
     '/auth/',

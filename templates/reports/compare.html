@@ -64,6 +64,13 @@
       </form>
     </section>
 
+    {% if report_compare_notice %}
+      <section class="card" style="margin-top: 16px;">
+        <p class="card__label">Aviso</p>
+        <p>{{ report_compare_notice }}</p>
+      </section>
+    {% endif %}
+
     {% if comparison %}
       {% if selected_company %}
         <section class="card card--table compare-company-card">

@@ -54,6 +54,10 @@
             <span class="company-card__label">Funcionarios</span>
             <span>{{ company.employee_count|default:"0" }}</span>
           </div>
+          <div>
+            <span class="company-card__label">Acesso ate</span>
+            <span>{{ company.access_expires_on|date:"d/m/Y"|default:"Sem limite" }}</span>
+          </div>
         </div>
         <div class="company-card__actions">
           <form method="post" action="{% url 'company-select' %}">
@@ -91,6 +95,7 @@
             data-risk-level="{{ company.risk_level }}"
             data-unit-type="{{ company.unit_type }}"
             data-unit-name="{{ company.unit_name }}"
+            data-access-expires-on="{{ company.access_expires_on|date:'Y-m-d' }}"
             data-is-active="{% if company.is_active %}1{% else %}0{% endif %}"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.25V20h2.75l8.11-8.11-2.75-2.75L4 17.25Zm13.71-8.04a1 1 0 0 0 0-1.42l-1.5-1.5a1 1 0 0 0-1.42 0l-1.17 1.17 2.75 2.75 1.34-1.3Z" fill="currentColor"/></svg>

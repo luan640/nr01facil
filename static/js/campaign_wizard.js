@@ -120,7 +120,7 @@
     const jobFunctionSelect = form.querySelector('#job_function_id');
     const useGhe = form.getAttribute('data-use-ghe') === '1';
     if (cpfCheckInFlight || !cpfIsAvailable) {
-      showAlert('CPF ja utilizado ou nao validado.');
+      showAlert('CPF já utilizado ou não validado.');
       return false;
     }
 

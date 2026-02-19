@@ -209,6 +209,7 @@
       editForm.querySelector('#edit_company_cnae').value = editButton.dataset.cnae || '';
       editForm.querySelector('#edit_company_risk_level').value = editButton.dataset.riskLevel || '1';
       editForm.querySelector('#edit_company_unit_name').value = editButton.dataset.unitName || '';
+      editForm.querySelector('#edit_company_access_expires_on').value = editButton.dataset.accessExpiresOn || '';
 
       const wizard = getCompanyWizard(editForm.closest('.modal-backdrop'));
       const rawCnpj = editButton.dataset.cnpj || '';

@@ -213,7 +213,7 @@
 
       if (statusValue === 'FINISHED' && hasPendingResponses) {
         const confirmed = await confirmDialog(
-          'Ainda faltam funcionario responder o questionario, deseja encerrar mesmo assim?'
+          'Ainda há funcionários que não responderam ao questionário. Deseja encerrar mesmo assim?'
         );
         if (!confirmed) {
           return;

@@ -1,6 +1,10 @@
 from django.db import transaction
 
 from apps.core.models import AlertSetting, ComplaintType, Department, GHE, JobFunction, MoodType
+from apps.tenancy.defaults import (
+    DEFAULT_CANONICAL_COMPLAINT_TYPES,
+    normalize_complaint_label,
+)
 from apps.tenancy.models import Company
 
 
@@ -16,15 +20,6 @@ DEFAULT_MOOD_TYPES = [
     ('Desmotivado', '\U0001F61E', 'bad', 2),
     ('Desapontado', '\U0001F641', 'bad', 2),
     ('Estressado', '\U0001F623', 'very_bad', 1),
-]
-
-DEFAULT_COMPLAINT_TYPES = [
-    'Assédio moral',
-    'Assédio sexual',
-    'Discriminação',
-    'Conduta antiética',
-    'Violência psicológica',
-    'Outro',
 ]
 
 DEFAULT_GHE_SECTOR_FUNCTIONS = [
@@ -111,13 +106,13 @@ def seed_company_defaults(company_id: int) -> None:
             MoodType.all_objects.bulk_create(mood_to_create)
 
         existing_complaints = set(
-            ComplaintType.all_objects.filter(company=company, label__in=DEFAULT_COMPLAINT_TYPES)
-            .values_list('label', flat=True)
+            normalize_complaint_label(label)
+            for label in ComplaintType.all_objects.filter(company=company).values_list('label', flat=True)
         )
         complaints_to_create = [
             ComplaintType(company=company, label=label, is_active=True)
-            for label in DEFAULT_COMPLAINT_TYPES
-            if label not in existing_complaints
+            for label in DEFAULT_CANONICAL_COMPLAINT_TYPES
+            if normalize_complaint_label(label) not in existing_complaints
         ]
         if complaints_to_create:
             ComplaintType.all_objects.bulk_create(complaints_to_create)
@@ -250,3 +245,4 @@ def seed_company_defaults(company_id: int) -> None:
             ]
             if dept_relations_to_create:
                 dept_through.objects.bulk_create(dept_relations_to_create)
+

@@ -12,7 +12,7 @@
 
 {% block content %}
 <div class="app-layout">
-  {% include "partials/sidebar.html" with active_menu="companies" is_master=True %}
+  {% include "partials/sidebar.html" with active_menu="companies" %}
 
   <main class="content" data-page="companies">
     <header class="content__header">
@@ -180,6 +180,10 @@
               <div class="form-field">
                 <label for="create_company_employee_count">Numero de funcionarios</label>
                 <input id="create_company_employee_count" name="employee_count" type="number" min="0" placeholder="Numero de funcionarios" />
+              </div>
+              <div class="form-field">
+                <label for="create_company_access_expires_on">Data limite de acesso</label>
+                <input id="create_company_access_expires_on" name="access_expires_on" type="date" />
               </div>
 
               <div class="form-field" style="grid-column: 1 / -1;">
@@ -358,6 +362,10 @@
               <div class="form-field">
                 <label for="edit_company_employee_count">Numero de funcionarios</label>
                 <input id="edit_company_employee_count" name="employee_count" type="number" min="0" placeholder="Numero de funcionarios" />
+              </div>
+              <div class="form-field">
+                <label for="edit_company_access_expires_on">Data limite de acesso</label>
+                <input id="edit_company_access_expires_on" name="access_expires_on" type="date" />
               </div>
 
               <div class="form-field" style="grid-column: 1 / -1;">

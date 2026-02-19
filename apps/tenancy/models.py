@@ -22,7 +22,20 @@ def company_logo_upload_to(instance, filename):
     return f'companies/{instance.slug}/logo/{timestamp}{ext.lower()}'
 
 
+def consultancy_logo_upload_to(instance, filename):
+    base, ext = os.path.splitext(get_valid_filename(filename))
+    timestamp = timezone.now().strftime('%y%m%d%H%M%S')
+    return f'consultancies/{instance.slug}/logo/{timestamp}{ext.lower()}'
+
+
 class Company(models.Model):
+    consultancy = models.ForeignKey(
+        'tenancy.Consultancy',
+        on_delete=models.PROTECT,
+        related_name='companies',
+        blank=True,
+        null=True,
+    )
     name = models.CharField(max_length=255)
     legal_name = models.CharField(max_length=255, blank=True)
     legal_representative_name = models.CharField(max_length=255, blank=True)
@@ -60,6 +73,7 @@ class Company(models.Model):
     )
     slug = models.SlugField(max_length=80, unique=True)
     is_active = models.BooleanField(default=True)
+    access_expires_on = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -70,6 +84,43 @@ class Company(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def has_valid_access(self, reference_date=None) -> bool:
+        if not self.is_active:
+            return False
+        if self.access_expires_on is None:
+            return True
+        if reference_date is None:
+            reference_date = timezone.localdate()
+        return reference_date <= self.access_expires_on
+
+
+class Consultancy(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=80, unique=True)
+    cnpj = models.CharField(
+        max_length=14,
+        unique=True,
+        validators=[cnpj_validator],
+        blank=True,
+        null=True,
+    )
+    location = models.CharField(max_length=255, blank=True)
+    logo = models.ImageField(
+        upload_to=consultancy_logo_upload_to,
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'consultancies'
+        ordering = ['name']
+
+    def __str__(self) -> str:
+        return self.name
 
 class CompanyMembership(models.Model):
     class Role(models.TextChoices):
@@ -118,6 +169,51 @@ class CompanyMembership(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user} -> {self.company}'
+
+
+class ConsultancyMembership(models.Model):
+    class Role(models.TextChoices):
+        OWNER = 'OWNER', 'Owner'
+        MEMBER = 'MEMBER', 'Member'
+
+    OWNER_ROLES = {Role.OWNER}
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='consultancy_memberships',
+    )
+    consultancy = models.ForeignKey(
+        Consultancy,
+        on_delete=models.CASCADE,
+        related_name='memberships',
+    )
+    role = models.CharField(
+        max_length=30,
+        choices=Role.choices,
+        default=Role.MEMBER,
+    )
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'consultancy_memberships'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'consultancy'],
+                name='tenancy_membership_unique_user_consultancy',
+            ),
+            models.UniqueConstraint(
+                fields=['user'],
+                condition=Q(is_default=True),
+                name='tenancy_membership_single_default_consultancy',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.user} -> {self.consultancy}'
 
 
 class TenantModel(models.Model):

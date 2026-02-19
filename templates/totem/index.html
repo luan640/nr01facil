@@ -13,8 +13,9 @@
 {% block content %}
 <main class="totem-screen">
   <header class="totem-header">
-    <h1>{{ company.name }} - {{ totem.name }}</h1>
-    <p>Totem psicossocial - coleta anonima</p>
+    <p class="totem-header__eyebrow">Canal institucional</p>
+    <h1>{{ company.name }}</h1>
+    <p class="totem-header__meta">Totem {{ totem.name }} | Coleta anonima e sigilosa</p>
   </header>
 
   {% if messages %}
@@ -27,7 +28,7 @@
 
   <section class="totem-panel" data-step="intro">
     <div class="totem-intro">
-      <p class="totem-intro__brand"><img src="{% static 'img/logo_vetorizada.png' %}" alt="Logo da empresa" /></p>
+      <!-- <p class="totem-intro__brand"><img src="{% static 'img/logo_vetorizada.png' %}" alt="Logo da empresa" /></p> -->
       <h2>Canal institucional de escuta e prevenção</h2>
       <p>
         Esse sistema é um canal institucional de escuta e prevenção em saúde mental, com uso anônimo e confidencial.
@@ -35,11 +36,11 @@
       <p>
         As informações são analisadas de forma coletiva para fins preventivos e organizacionais, não substituindo atendimento psicológico individual.
       </p>
-      <div class="totem-intro__technical">
+      <!-- <div class="totem-intro__technical">
         <p><strong>Responsável técnico:</strong></p>
         <p>Luis Taumaturgo de Souza Filho - Psicólogo</p>
         <p>CRP 11/17405</p>
-      </div>
+      </div> -->
       <div class="flow-actions">
         <button type="button" class="btn btn--primary" data-open-step="home">Entendi e desejo continuar</button>
       </div>
@@ -49,9 +50,15 @@
   <section class="totem-panel is-hidden" data-step="home">
     <h2>Como deseja contribuir agora?</h2>
     <div class="big-actions">
-      <button type="button" class="big-btn" data-open-step="complaint">Canal de denuncia</button>
-      <button type="button" class="big-btn" data-open-step="mood">Registrar humor</button>
-      <button type="button" class="big-btn big-btn--danger" data-open-step="help">Preciso de ajuda agora</button>
+      <button type="button" class="big-btn" data-open-step="complaint">
+        <span class="big-btn__label">Canal de denúncia</span>
+      </button>
+      <button type="button" class="big-btn" data-open-step="mood">
+        <span class="big-btn__label">Registrar humor</span>
+      </button>
+      <button type="button" class="big-btn big-btn--danger" data-open-step="help">
+        <span class="big-btn__label">Preciso de ajuda agora</span>
+      </button>
     </div>
   </section>
 
@@ -147,7 +154,7 @@
         {% endfor %}
       </select>
     </div>
-    <div class="flow-actions">
+    <div class="flow-actions flow-actions--modal-gap">
       <button type="button" class="btn btn--light" data-close-mood-department-modal>Voltar</button>
       <button type="button" class="btn btn--primary" data-confirm-mood-submit>Confirmar</button>
     </div>

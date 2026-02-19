@@ -30,7 +30,7 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
         rightMargin=18 * mm,
         topMargin=20 * mm,
         bottomMargin=14 * mm,
-        title="Relatorio de Saude Organizacional",
+        title="Relatório de Saúde Organizacional",
     )
     doc.width = doc.pagesize[0] - doc.leftMargin - doc.rightMargin
     doc.height = doc.pagesize[1] - doc.topMargin - doc.bottomMargin
@@ -90,6 +90,54 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
         fontSize=8,
         leading=11,
         textColor=colors.HexColor("#64748b"),
+    )
+    cover_title_style = ParagraphStyle(
+        "CoverTitle",
+        parent=styles["Title"],
+        alignment=1,
+        fontSize=22,
+        leading=26,
+        textColor=colors.HexColor("#0f172a"),
+        fontName="Helvetica-Bold",
+        spaceAfter=10,
+    )
+    cover_subtitle_style = ParagraphStyle(
+        "CoverSubtitle",
+        parent=styles["BodyText"],
+        alignment=1,
+        fontSize=11,
+        leading=15,
+        textColor=colors.HexColor("#334155"),
+        spaceAfter=10,
+    )
+    cover_tag_style = ParagraphStyle(
+        "CoverTag",
+        parent=styles["BodyText"],
+        alignment=1,
+        fontSize=10,
+        leading=12,
+        textColor=colors.HexColor("#1d4ed8"),
+        fontName="Helvetica-Bold",
+        spaceAfter=14,
+    )
+    cover_block_title_style = ParagraphStyle(
+        "CoverBlockTitle",
+        parent=styles["BodyText"],
+        alignment=1,
+        fontSize=12,
+        leading=16,
+        textColor=colors.HexColor("#0f172a"),
+        fontName="Helvetica-Bold",
+        spaceAfter=2,
+    )
+    cover_block_text_style = ParagraphStyle(
+        "CoverBlockText",
+        parent=styles["BodyText"],
+        alignment=1,
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor("#334155"),
+        spaceAfter=0,
     )
 
     def add_section_header(number, title):
@@ -187,10 +235,8 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
         d = Drawing(10, 10)
         d.add(Rect(0, 0, 10, 10, strokeColor=colors.HexColor("#94a3b8"), fillColor=colors.white))
         if checked:
-            d.add(String(5, 2.5, "✓", fontName="Helvetica-Bold", fontSize=8, fillColor=colors.HexColor("#16a34a"), textAnchor="middle"))
+            d.add(String(5, 2.5, "X", fontName="Helvetica-Bold", fontSize=8, fillColor=colors.HexColor("#16a34a"), textAnchor="middle"))
         return d
-
-
     def chunk_list(items, size):
         if size <= 0:
             return [items]
@@ -243,15 +289,15 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
         except Exception:
             pass
 
-    story.append(Paragraph("RELATÓRIO DE SAÚDE ORGANIZACIONAL", title_style))
+    story.append(Spacer(1, 14 * mm if company_logo else 24 * mm))
+    story.append(Paragraph("RELATÓRIO DE SAÚDE ORGANIZACIONAL", cover_title_style))
     story.append(
         Paragraph(
-            "Avaliação ergonômica preliminar dos fatores riscos psicossociais relacionados ao ambiente de trabalho",
-            subtitle_style,
+            "Avaliação ergonômica preliminar dos fatores de risco psicossociais relacionados ao ambiente de trabalho",
+            cover_subtitle_style,
         )
     )
-    story.append(Paragraph("AEP-FRPRT NR01/HSE-SIT-UK", subtitle_style))
-    story.append(Spacer(1, 6))
+    story.append(Paragraph("AEP-FRPRT NR01/HSE-SIT-UK", cover_tag_style))
 
     company_name = report_context.get("company_name", "-")
     company_cnpj = report_context.get("company_cnpj", "-")
@@ -264,10 +310,34 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     responses_count = report_context.get("responses_count", "-")
     evaluation_date = report_context.get("evaluation_date", "-")
 
-    story.append(Paragraph("RELATÓRIO DE FATORES RISCOS PSICOSSOCIAIS RELACIONADOS AO TRABALHO (FRPRT)", section_style))
-    story.append(Paragraph("AVALIAÇÃO ERGONÔMICA PRELIMINAR (AEP)", section_style))
-    story.append(Paragraph("NR-1. NR-17, GUIA DE FATORES PSICOSSOCIAIS HSE-SIT-UK", body_style))
-    story.append(Spacer(1, 6))
+    cover_panel = Table(
+        [[
+            [
+                Paragraph("RELATÓRIO DE FATORES DE RISCO PSICOSSOCIAIS RELACIONADOS AO TRABALHO", cover_block_title_style),
+                Paragraph("(FRPRT)", cover_block_title_style),
+                Spacer(1, 3),
+                Paragraph("AVALIAÇÃO ERGONÔMICA PRELIMINAR (AEP)", cover_block_title_style),
+                Spacer(1, 2),
+                Paragraph("NR-1. NR-17, GUIA DE FATORES PSICOSSOCIAIS HSE-SIT-UK", cover_block_text_style),
+            ]
+        ]],
+        colWidths=[doc.width * 0.90],
+        hAlign="CENTER",
+    )
+    cover_panel.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#cbd5e1")),
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 14),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+            ]
+        )
+    )
+    story.append(cover_panel)
+    story.append(Spacer(1, 8))
 
     story.append(PageBreak())
     story.append(Paragraph("SUMARIO", section_style))
@@ -340,7 +410,7 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
                 ]
             )
     else:
-        tech_rows.append(["Nenhum responsavel tecnico informado.", "", ""])
+        tech_rows.append(["Nenhum responsável técnico informado.", "", ""])
     tech_table = Table(
         tech_rows,
         colWidths=[doc.width * 0.36, doc.width * 0.44, doc.width * 0.20],
@@ -366,13 +436,13 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     story.append(
         Paragraph(
             "Esta Avaliação Ergonômica Preliminar (AEP) tem por finalidade identificar e examinar tecnicamente os "
-            "fatores de riscos psicossociais existentes no contexto de trabalho, que possam contribuir para o estresse "
+            "fatores de risco psicossociais existentes no contexto de trabalho, que possam contribuir para o estresse "
             "ocupacional e afetar a saúde, o bem-estar e o desempenho dos colaboradores. O presente relatório encontra-se "
             "em plena conformidade com a NR-17 e a NR-1 (GRO e PGR), observando o Guia de Informações sobre Fatores de "
             "Riscos Psicossociais Relacionados ao Trabalho (MTE) e as diretrizes do HSE-SIT-UK, assegurando alinhamento "
             "com as melhores práticas nacionais e internacionais em saúde e segurança do trabalho. Além de atender às "
             "exigências legais, este AEP-FRPRT fornece fundamentos técnicos consistentes para subsidiar decisões quanto "
-            "à necessidade de aprofundamento por meio da Análise Ergonômica do Trabalho (AET), à priorização de medidas "
+            "às necessidades de aprofundamento por meio da Análise Ergonômica do Trabalho (AET), à priorização de medidas "
             "de controle e à definição de planos de ação integrados ao PGR, com o propósito de promover ambientes laborais "
             "mais seguros, saudáveis e produtivos.",
             body_style,
@@ -464,7 +534,7 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     story.append(Paragraph("Lista de trabalhadores", sub_section_style))
     story.append(
         Paragraph(
-            "Ao selecionar uma amostra de trabalhadores — ou mesmo a totalidade dos colaboradores da organização — "
+            "Ao selecionar uma amostra de trabalhadores, ou mesmo a totalidade dos colaboradores da organização, "
             "é fundamental assegurar a disponibilidade de uma lista atualizada dos participantes incluídos na pesquisa. "
             "Essa relação pode ser obtida por meio da folha de pagamento, cadastros de empregados, registros de segurança "
             "ou outras fontes equivalentes. É imprescindível que a lista utilizada esteja correta e atualizada, a fim de "
@@ -600,6 +670,7 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     results = report_context.get("results") or {}
     domains = results.get("domains") or []
     domain_details = results.get("domain_details") or []
+    group_label_singular = (report_context.get("group_label_singular") or "Setor").strip() or "Setor"
     overall_percent = results.get("overall_percent", 0)
     overall_avg = results.get("overall_avg", 0)
     overall_label = results.get("overall_label", "Sem dados")
@@ -856,7 +927,7 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
         alignment=0,
     )
 
-    story.append(Paragraph("Grafico dos resultados", chart_title_center))
+    story.append(Paragraph("Gráfico dos resultados", chart_title_center))
     chart_left_col = doc.width * 0.28
     chart_right_col = doc.width * 0.18
     bar_width = doc.width - chart_left_col - chart_right_col
@@ -923,17 +994,17 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
         right_block.append(graph_separator())
         right_block.append(Spacer(1, 6))
 
-        ghes = domain.get("ghes") or []
-        if ghes:
-            right_block.extend([Paragraph("Análise por Setor", chart_text_center), Spacer(1, 2)])
-            for ghe in ghes:
-                percent = ghe.get("percent", 0)
-                avg = ghe.get("avg", 0)
+        group_items = domain.get("group_items") or domain.get("ghes") or []
+        if group_items:
+            right_block.extend([Paragraph(f"Análise por {group_label_singular}", chart_text_center), Spacer(1, 2)])
+            for group in group_items:
+                percent = group.get("percent", 0)
+                avg = group.get("avg", 0)
                 color = zone_color(percent)
                 row = Table(
                     [
                         [
-                            Paragraph(ghe.get("name", "-"), chart_text_center),
+                            Paragraph(group.get("name", "-"), chart_text_center),
                             make_bar(percent, bar_width, 12, color, show_container=True),
                             Paragraph(f"<b>{percent}%</b> | {avg}", chart_text_center),
                         ]
@@ -1041,15 +1112,15 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
                 story.append(Spacer(1, 6))
                 story.append(Spacer(1, 6))
 
-        ghe_questions = domain.get("ghe_questions") or []
-        if ghe_questions:
-            for ghe in ghe_questions:
-                qs = ghe.get("questions", [])
+        group_questions = domain.get("group_questions") or domain.get("ghe_questions") or []
+        if group_questions:
+            for group in group_questions:
+                qs = group.get("questions", [])
                 if not qs:
                     continue
                 block = [
-                    Paragraph(f"{domain.get('label', '').upper()} (Análise por Setor)", chart_title_big),
-                    Paragraph(f"SETOR: {ghe.get('name', '-')}", chart_subtitle_big),
+                    Paragraph(f"{domain.get('label', '').upper()} (Análise por {group_label_singular})", chart_title_big),
+                    Paragraph(f"{group_label_singular.upper()}: {group.get('name', '-')}", chart_subtitle_big),
                     Spacer(1, 2),
                 ]
                 for q in qs:
@@ -1353,7 +1424,7 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     month_names = [
         'janeiro',
         'fevereiro',
-        'marco',
+        'março',
         'abril',
         'maio',
         'junho',
@@ -1392,7 +1463,11 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     )
 
     evaluator_name = report_context.get("evaluation_representative_name") or "-"
-    evaluator_company = report_context.get("evaluation_company_name") or "CISS CONSULTORIA"
+    evaluator_company = (
+        report_context.get("evaluation_company_name")
+        or report_context.get("consultancy_name")
+        or "-"
+    )
     approver_name = report_context.get("company_legal_representative_name") or "-"
     approver_company = report_context.get("company_legal_representative_company") or "-"
 
@@ -1580,6 +1655,4 @@ def build_campaign_report_pdf(report_context: dict) -> bytes:
     pdf = buffer.getvalue()
     buffer.close()
     return pdf
-
-
 
