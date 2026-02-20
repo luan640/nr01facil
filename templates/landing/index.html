@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NR-1 Fácil — Gestão Psicossocial Descomplicada</title>
+  <meta name="description" content="Plataforma SaaS para gestão de riscos psicossociais, canal de denúncia anônima e conformidade total com a NR-1. Proteja seus colaboradores e sua empresa." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:      #4f46e5;
+      --brand-light:#818cf8;
+      --brand-dark: #3730a3;
+      --accent:     #06b6d4;
+      --accent2:    #10b981;
+      --danger:     #f43f5e;
+      --night:      #0b0f1e;
+      --slate-900:  #0f172a;
+      --slate-700:  #334155;
+      --slate-500:  #64748b;
+      --slate-300:  #cbd5e1;
+      --slate-100:  #f1f5f9;
+      --white:      #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--night);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ─── NAVBAR ─── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(11, 15, 30, 0.75);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      transition: padding .3s;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.2rem; font-weight: 800; letter-spacing: -.3px;
+      text-decoration: none; color: var(--white);
+    }
+    .nav-logo .badge {
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      padding: 4px 10px; border-radius: 20px;
+      font-size: .75rem; font-weight: 700; color: #fff;
+    }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--slate-300); text-decoration: none; font-size: .9rem;
+      font-weight: 500; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff; text-decoration: none;
+      padding: 10px 22px; border-radius: 10px;
+      font-size: .9rem; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(79,70,229,.4);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(79,70,229,.55); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,70,229,.45) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 80%, rgba(6,182,212,.2) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 85%, rgba(16,185,129,.15) 0%, transparent 60%);
+    }
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 80%);
+    }
+    .hero-noise {
+      position: absolute; inset: 0; z-index: 0; opacity: .025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 860px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(79,70,229,.18); border: 1px solid rgba(79,70,229,.4);
+      color: var(--brand-light); font-size: .8rem; font-weight: 600;
+      padding: 6px 16px; border-radius: 100px;
+      margin-bottom: 28px; letter-spacing: .4px;
+      animation: fadeDown .6s ease both;
+    }
+    .hero-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(16,185,129,.3);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{ box-shadow: 0 0 0 3px rgba(16,185,129,.3); }
+      50%{ box-shadow: 0 0 0 6px rgba(16,185,129,.1); }
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 24px;
+      animation: fadeUp .7s .1s ease both;
+    }
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--brand-light), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.2rem); color: var(--slate-300);
+      line-height: 1.7; max-width: 640px; margin: 0 auto 40px;
+      font-weight: 400;
+      animation: fadeUp .7s .2s ease both;
+    }
+    .hero-actions {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; flex-wrap: wrap;
+      animation: fadeUp .7s .3s ease both;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff; text-decoration: none; border: none; cursor: pointer;
+      padding: 15px 30px; border-radius: 12px;
+      font-size: 1rem; font-weight: 700;
+      box-shadow: 0 8px 32px rgba(79,70,229,.45);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(79,70,229,.6); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+      color: var(--slate-300); text-decoration: none; cursor: pointer;
+      padding: 15px 30px; border-radius: 12px;
+      font-size: 1rem; font-weight: 600;
+      transition: background .2s, color .2s, transform .2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.12); color: var(--white); transform: translateY(-2px); }
+    .hero-stats {
+      display: flex; align-items: center; justify-content: center; gap: 32px;
+      margin-top: 72px; flex-wrap: wrap;
+      animation: fadeUp .7s .5s ease both;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat strong { display: block; font-size: 2rem; font-weight: 900; color: var(--white); }
+    .hero-stat span { font-size: .82rem; color: var(--slate-500); font-weight: 500; }
+    .hero-divider { width: 1px; height: 44px; background: rgba(255,255,255,.1); }
+
+    /* ─── PROBLEM ─── */
+    .problem {
+      padding: 100px 24px;
+      background: linear-gradient(180deg, var(--night) 0%, #0d1226 100%);
+    }
+    .section-label {
+      text-align: center;
+      font-size: .78rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--brand-light); margin-bottom: 12px;
+    }
+    .section-title {
+      text-align: center; font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 800; letter-spacing: -.5px; margin-bottom: 16px;
+    }
+    .section-sub {
+      text-align: center; color: var(--slate-500);
+      font-size: 1rem; max-width: 580px; margin: 0 auto 56px;
+      line-height: 1.7;
+    }
+    .container { max-width: 1140px; margin: 0 auto; }
+    .problem-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .problem-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 16px; padding: 28px 24px;
+      transition: border-color .3s, transform .3s;
+    }
+    .problem-card:hover { border-color: rgba(244,63,94,.3); transform: translateY(-4px); }
+    .problem-card .icon {
+      font-size: 2rem; margin-bottom: 14px; display: block;
+    }
+    .problem-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+    .problem-card p { font-size: .88rem; color: var(--slate-500); line-height: 1.65; }
+
+    /* ─── SOLUTION ─── */
+    .solution {
+      padding: 100px 24px;
+      background: #0d1226;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: rgba(79,70,229,.05);
+      border: 1px solid rgba(79,70,229,.15);
+      border-radius: 20px; padding: 32px 28px;
+      transition: border-color .3s, box-shadow .3s, transform .3s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--brand), var(--accent));
+      opacity: 0; transition: opacity .3s;
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover { border-color: rgba(79,70,229,.4); box-shadow: 0 8px 40px rgba(79,70,229,.15); transform: translateY(-4px); }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 18px;
+    }
+    .feature-icon.purple { background: rgba(79,70,229,.2); }
+    .feature-icon.cyan   { background: rgba(6,182,212,.2); }
+    .feature-icon.green  { background: rgba(16,185,129,.2); }
+    .feature-icon.rose   { background: rgba(244,63,94,.2); }
+    .feature-icon.amber  { background: rgba(245,158,11,.2); }
+    .feature-icon.blue   { background: rgba(59,130,246,.2); }
+    .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { font-size: .88rem; color: var(--slate-500); line-height: 1.65; }
+    .feature-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .tag {
+      font-size: .72rem; font-weight: 600; padding: 4px 10px;
+      border-radius: 20px; letter-spacing: .2px;
+    }
+    .tag-purple { background: rgba(79,70,229,.2); color: var(--brand-light); }
+    .tag-cyan { background: rgba(6,182,212,.2); color: #67e8f9; }
+    .tag-green { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    .tag-rose { background: rgba(244,63,94,.2); color: #fda4af; }
+    .tag-amber { background: rgba(245,158,11,.2); color: #fcd34d; }
+
+    /* ─── HOW IT WORKS ─── */
+    .how {
+      padding: 100px 24px;
+      background: linear-gradient(180deg, #0d1226 0%, var(--night) 100%);
+    }
+    .steps { display: flex; flex-direction: column; gap: 0; max-width: 740px; margin: 0 auto; }
+    .step { display: flex; gap: 24px; align-items: flex-start; padding: 32px 0; }
+    .step:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,.06); }
+    .step-num {
+      flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800; color: #fff;
+      box-shadow: 0 4px 20px rgba(79,70,229,.4);
+    }
+    .step-body h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .step-body p { font-size: .88rem; color: var(--slate-500); line-height: 1.65; }
+
+    /* ─── COMPLIANCE ─── */
+    .compliance {
+      padding: 100px 24px;
+      background: var(--night);
+    }
+    .compliance-inner {
+      background: linear-gradient(135deg, rgba(79,70,229,.12), rgba(6,182,212,.08));
+      border: 1px solid rgba(79,70,229,.25);
+      border-radius: 28px; padding: 60px 48px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+    }
+    .compliance-text h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+    .compliance-text p { font-size: .95rem; color: var(--slate-300); line-height: 1.7; margin-bottom: 28px; }
+    .compliance-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .compliance-list li {
+      display: flex; align-items: center; gap: 12px;
+      font-size: .9rem; color: var(--slate-300);
+    }
+    .compliance-list li .chk {
+      flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(16,185,129,.2); color: #6ee7b7;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem;
+    }
+    .compliance-visual {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    .metric-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; padding: 20px;
+      transition: border-color .3s;
+    }
+    .metric-card:hover { border-color: rgba(79,70,229,.35); }
+    .metric-card .num { font-size: 1.8rem; font-weight: 900; background: linear-gradient(135deg, var(--brand-light), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .metric-card .lbl { font-size: .78rem; color: var(--slate-500); margin-top: 4px; line-height: 1.4; }
+
+    /* ─── TESTIMONIALS ─── */
+    .testimonials {
+      padding: 100px 24px;
+      background: #0d1226;
+    }
+    .testimonials-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .testimonial-card {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px; padding: 28px;
+      transition: border-color .3s, transform .3s;
+    }
+    .testimonial-card:hover { border-color: rgba(79,70,229,.3); transform: translateY(-4px); }
+    .testimonial-stars { color: #fbbf24; font-size: .9rem; margin-bottom: 14px; }
+    .testimonial-text { font-size: .9rem; color: var(--slate-300); line-height: 1.7; font-style: italic; margin-bottom: 20px; }
+    .testimonial-author { display: flex; align-items: center; gap: 12px; }
+    .testimonial-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .testimonial-name { font-size: .88rem; font-weight: 700; }
+    .testimonial-role { font-size: .78rem; color: var(--slate-500); }
+
+    /* ─── PRICING ─── */
+    .pricing {
+      padding: 100px 24px;
+      background: linear-gradient(180deg, #0d1226 0%, var(--night) 100%);
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      align-items: start;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .pricing-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 22px;
+      padding: 36px 30px;
+      position: relative;
+      transition: transform .3s, box-shadow .3s, border-color .3s;
+    }
+    .pricing-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(79,70,229,.18);
+    }
+    .pricing-card.featured {
+      background: linear-gradient(160deg, rgba(79,70,229,.15), rgba(6,182,212,.08));
+      border-color: rgba(79,70,229,.45);
+      box-shadow: 0 8px 40px rgba(79,70,229,.2);
+    }
+    .pricing-card.featured:hover {
+      box-shadow: 0 24px 70px rgba(79,70,229,.35);
+    }
+    .pricing-popular {
+      position: absolute;
+      top: -14px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      color: #fff; font-size: .72rem; font-weight: 800;
+      padding: 5px 18px; border-radius: 100px;
+      letter-spacing: .6px; text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(79,70,229,.45);
+    }
+    .pricing-name {
+      font-size: .82rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--brand-light);
+      margin-bottom: 10px;
+    }
+    .pricing-price {
+      display: flex; align-items: flex-end; gap: 4px;
+      margin-bottom: 6px;
+    }
+    .pricing-currency {
+      font-size: 1.1rem; font-weight: 700; color: var(--slate-300);
+      margin-bottom: 8px;
+    }
+    .pricing-amount {
+      font-size: 3rem; font-weight: 900; line-height: 1;
+      background: linear-gradient(135deg, var(--white), var(--slate-300));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .pricing-period {
+      font-size: .85rem; color: var(--slate-500); margin-bottom: 2px; align-self: flex-end;
+    }
+    .pricing-desc {
+      font-size: .88rem; color: var(--slate-500); line-height: 1.6;
+      margin-bottom: 24px; min-height: 48px;
+    }
+    .pricing-divider {
+      height: 1px; background: rgba(255,255,255,.07); margin-bottom: 22px;
+    }
+    .pricing-features {
+      list-style: none; display: flex; flex-direction: column; gap: 12px;
+      margin-bottom: 28px;
+    }
+    .pricing-features li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: .88rem; color: var(--slate-300); line-height: 1.45;
+    }
+    .pricing-features li .ico {
+      flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .65rem; margin-top: 1px;
+    }
+    .pricing-features li .ico.ok  { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    .pricing-features li .ico.off { background: rgba(255,255,255,.06); color: var(--slate-500); }
+    .pricing-features li.dim { color: var(--slate-500); }
+    .pricing-cta {
+      display: block; width: 100%; padding: 14px;
+      border-radius: 12px; font-size: .95rem; font-weight: 700;
+      text-align: center; text-decoration: none; cursor: pointer;
+      border: none; font-family: inherit;
+      transition: transform .2s, box-shadow .2s, background .2s;
+    }
+    .pricing-cta.primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(79,70,229,.4);
+    }
+    .pricing-cta.primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(79,70,229,.55); }
+    .pricing-cta.ghost {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: var(--slate-300);
+    }
+    .pricing-cta.ghost:hover { background: rgba(255,255,255,.1); color: var(--white); transform: translateY(-2px); }
+    .pricing-note {
+      text-align: center; font-size: .8rem; color: var(--slate-500);
+      margin-top: 32px; line-height: 1.6;
+    }
+    .pricing-note strong { color: var(--slate-300); }
+
+    /* ─── INTEREST / CTA ─── */
+    .interest {
+      padding: 100px 24px;
+      background: var(--night);
+      position: relative; overflow: hidden;
+    }
+    .interest-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 100%, rgba(79,70,229,.3) 0%, transparent 70%);
+    }
+    .interest-inner {
+      position: relative; z-index: 1;
+      max-width: 640px; margin: 0 auto; text-align: center;
+    }
+    .interest-inner .emoji { font-size: 3rem; display: block; margin-bottom: 20px; }
+    .interest-inner h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 900; margin-bottom: 14px; letter-spacing: -.5px; }
+    .interest-inner > p { font-size: 1rem; color: var(--slate-300); line-height: 1.7; margin-bottom: 40px; }
+    .interest-form {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 24px; padding: 36px 32px;
+      backdrop-filter: blur(10px);
+    }
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-label {
+      display: block; font-size: .82rem; font-weight: 600;
+      color: var(--slate-300); margin-bottom: 7px;
+    }
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      color: var(--white); border-radius: 10px;
+      padding: 13px 16px; font-size: .95rem; font-family: inherit;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      outline: none;
+    }
+    .form-input::placeholder { color: var(--slate-500); }
+    .form-input:focus {
+      border-color: var(--brand); background: rgba(79,70,229,.08);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.2);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-select {
+      width: 100%;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      color: var(--white); border-radius: 10px;
+      padding: 13px 16px; font-size: .95rem; font-family: inherit;
+      transition: border-color .2s; outline: none; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2364748b'%3E%3Cpath d='M4.5 6l3.5 3.5L11.5 6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; background-size: 16px;
+    }
+    .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
+    .form-select option { background: #1e293b; color: var(--white); }
+    .btn-submit {
+      width: 100%; padding: 16px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff; font-size: 1rem; font-weight: 700; border-radius: 12px;
+      font-family: inherit; margin-top: 8px;
+      box-shadow: 0 8px 32px rgba(79,70,229,.45);
+      transition: transform .2s, box-shadow .2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(79,70,229,.6); }
+    .btn-submit:active { transform: translateY(0); }
+    .form-note {
+      margin-top: 14px; font-size: .78rem; color: var(--slate-500); line-height: 1.5;
+    }
+    .form-note a { color: var(--brand-light); text-decoration: none; }
+    .form-note a:hover { text-decoration: underline; }
+
+    /* ─── SUCCESS STATE ─── */
+    .form-success {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; gap: 14px; padding: 20px 0;
+    }
+    .form-success.is-visible { display: flex; }
+    .interest-form.is-sent .form-fields { display: none; }
+    .interest-form.is-sent .form-success { display: flex; }
+    .success-icon {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: rgba(16,185,129,.2); border: 2px solid rgba(16,185,129,.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .form-success h3 { font-size: 1.3rem; font-weight: 800; }
+    .form-success p { font-size: .9rem; color: var(--slate-300); line-height: 1.6; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 40px 24px;
+      background: #080b14;
+      border-top: 1px solid rgba(255,255,255,.06);
+      text-align: center;
+    }
+    .footer-logo {
+      font-size: 1.1rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--brand-light), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    footer p { font-size: .82rem; color: var(--slate-500); line-height: 1.6; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── SCROLL REVEAL ─── */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .65s ease, transform .65s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+      .compliance-inner { grid-template-columns: 1fr; padding: 36px 24px; }
+      .compliance-visual { grid-template-columns: 1fr 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <a href="#" class="nav-logo">
+      <span class="badge">NR-1</span> Fácil
+    </a>
+    <ul class="nav-links">
+      <li><a href="#solucao">Solução</a></li>
+      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#conformidade">Conformidade</a></li>
+      <li><a href="#precos">Preços</a></li>
+    </ul>
+    <a href="#interesse" class="nav-cta">Quero conhecer →</a>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-noise"></div>
+    <div class="hero-content">
+      <span class="hero-badge">
+        <span class="dot"></span>
+        Conformidade total com a NR-1 · Portaria MTE 1.419/2024
+      </span>
+      <h1>
+        Gestão psicossocial<br />
+        <span class="grad">simples, segura e eficaz</span>
+      </h1>
+      <p>
+        Monitore o bem-estar da sua equipe em tempo real, documente evidências para auditorias
+        e ofereça um canal de denúncia anônimo — tudo em uma única plataforma.
+      </p>
+      <div class="hero-actions">
+        <a href="#interesse" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Quero começar agora
+        </a>
+        <a href="#como-funciona" class="btn-ghost">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Ver como funciona
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><strong>NR-1</strong><span>Portaria MTE&nbsp;1.419</span></div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat"><strong>100%</strong><span>Anônimo e seguro</span></div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat"><strong>PDF</strong><span>Relatórios automáticos</span></div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat"><strong>Real-time</strong><span>Alertas imediatos</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       PROBLEMA
+  ═══════════════════════════════════════════ -->
+  <section class="problem">
+    <div class="container">
+      <p class="section-label reveal">O problema</p>
+      <h2 class="section-title reveal">Sua empresa está preparada<br />para a nova NR-1?</h2>
+      <p class="section-sub reveal">
+        Desde 2024, a norma obriga todas as empresas a identificar, monitorar e documentar
+        riscos psicossociais no trabalho. Quem não cumprir, responde.
+      </p>
+      <div class="problem-grid">
+        <div class="problem-card reveal">
+          <span class="icon">⚠️</span>
+          <h3>Multas e autuações</h3>
+          <p>O descumprimento da NR-1 expõe a empresa a fiscalizações do MTE, multas e embargos — especialmente em licitações públicas.</p>
+        </div>
+        <div class="problem-card reveal">
+          <span class="icon">📄</span>
+          <h3>Falta de documentação</h3>
+          <p>Sem evidências formais, qualquer acidente ou denúncia de trabalhador vira prova contra a empresa por omissão de cuidado.</p>
+        </div>
+        <div class="problem-card reveal">
+          <span class="icon">🔕</span>
+          <h3>Denúncias silenciadas</h3>
+          <p>Sem canal seguro e anônimo, assédio e sobrecarga ficam escondidos — até explodir em afastamentos, processos e crise de imagem.</p>
+        </div>
+        <div class="problem-card reveal">
+          <span class="icon">📊</span>
+          <h3>Gestores no escuro</h3>
+          <p>Sem dados de clima em tempo real, decisões de RH e SESMT são tomadas no feeling — e os riscos só aparecem depois do estrago.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       SOLUÇÃO
+  ═══════════════════════════════════════════ -->
+  <section class="solution" id="solucao">
+    <div class="container">
+      <p class="section-label reveal">A solução</p>
+      <h2 class="section-title reveal">Tudo que você precisa<br />em uma plataforma</h2>
+      <p class="section-sub reveal">Do totem de humor ao relatório de auditoria assinado digitalmente.</p>
+      <div class="features-grid">
+
+        <div class="feature-card reveal">
+          <div class="feature-icon cyan">😊</div>
+          <h3>Totem de Registro de Humor</h3>
+          <p>Interface touchscreen ou tablet instalada nas dependências da empresa. O colaborador registra seu estado emocional em segundos, com total anonimato.</p>
+          <div class="feature-tags">
+            <span class="tag tag-cyan">Anônimo</span>
+            <span class="tag tag-green">Tempo real</span>
+          </div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon purple">📊</div>
+          <h3>Dashboard Gerencial</h3>
+          <p>Visualize indicadores de clima psicossocial por setor, turno e período. Identifique tendências antes que se tornem crises.</p>
+          <div class="feature-tags">
+            <span class="tag tag-purple">Filtros avançados</span>
+            <span class="tag tag-cyan">Gráficos interativos</span>
+          </div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon rose">📢</div>
+          <h3>Canal de Denúncia Anônimo</h3>
+          <p>Canal estruturado para assédio moral, sexual, sobrecarga e violência psicológica. Rastreável para compliance, invisível para o denunciante.</p>
+          <div class="feature-tags">
+            <span class="tag tag-rose">Assédio moral</span>
+            <span class="tag tag-rose">Assédio sexual</span>
+            <span class="tag tag-amber">Compliance</span>
+          </div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon green">🧾</div>
+          <h3>Relatórios em PDF Automáticos</h3>
+          <p>Relatórios de clima, risco psicossocial, ações e auditoria gerados automaticamente, com assinatura técnica. Prontos para fiscalização do MTE.</p>
+          <div class="feature-tags">
+            <span class="tag tag-green">PGR / GRO</span>
+            <span class="tag tag-amber">Auditoria</span>
+            <span class="tag tag-cyan">PDF assinado</span>
+          </div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon amber">🔔</div>
+          <h3>Alertas Automáticos</h3>
+          <p>RH e SESMT recebem alertas por e-mail quando os índices de estresse, denúncias ou pedidos de ajuda ultrapassam limites configuráveis.</p>
+          <div class="feature-tags">
+            <span class="tag tag-amber">E-mail</span>
+            <span class="tag tag-purple">Limites configuráveis</span>
+          </div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon blue">🏢</div>
+          <h3>Multi-empresa (SaaS)</h3>
+          <p>Gerencie múltiplas filiais e unidades em um único painel. Cada empresa com seus dados isolados, usuários e relatórios independentes.</p>
+          <div class="feature-tags">
+            <span class="tag tag-cyan">Multi-tenant</span>
+            <span class="tag tag-purple">Gestão centralizada</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       COMO FUNCIONA
+  ═══════════════════════════════════════════ -->
+  <section class="how" id="como-funciona">
+    <div class="container">
+      <p class="section-label reveal">Passo a passo</p>
+      <h2 class="section-title reveal">Em funcionamento em minutos</h2>
+      <p class="section-sub reveal">Sem infraestrutura complexa. Instalação 100% na nuvem.</p>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Cadastro da empresa e configuração inicial</h3>
+            <p>Crie sua conta, cadastre setores, GHEs, funções e configure os tipos de humor e canais de denúncia conforme a realidade da sua empresa. Pronto em menos de 15 minutos.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Instale o totem em qualquer tablet ou computador</h3>
+            <p>Abra a URL do totem em um dispositivo na entrada do setor ou refeitório. Nenhum aplicativo para instalar — funciona 100% no navegador.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>Colaboradores registram humor e denúncias anonimamente</h3>
+            <p>Interface simples com emojis e categorias claras. O colaborador interage em segundos. Sem identificação, sem login, sem barreiras.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h3>Gestores acompanham o dashboard em tempo real</h3>
+            <p>RH, SESMT e direção visualizam indicadores consolidados, tendências por período e alertas automáticos quando os limites são ultrapassados.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h3>Gere relatórios para auditoria com um clique</h3>
+            <p>PDF formatado com metodologia, indicadores, declaração de anonimato e assinatura técnica. Ideal para PGR, GRO, licitações e fiscalização do MTE.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CONFORMIDADE
+  ═══════════════════════════════════════════ -->
+  <section class="compliance" id="conformidade">
+    <div class="container">
+      <div class="compliance-inner reveal">
+        <div class="compliance-text">
+          <p class="section-label" style="text-align:left; margin-bottom:8px;">Conformidade legal</p>
+          <h2>Seu PGR em dia,<br />sua empresa protegida</h2>
+          <p>A plataforma foi desenhada para atender integralmente os requisitos da NR-1 (Portaria MTE 1.419/2024) em gestão de riscos psicossociais — com documentação pronta para auditoria, compliance e licitações públicas.</p>
+          <ul class="compliance-list">
+            <li><span class="chk">✓</span> Identificação e monitoramento de riscos psicossociais</li>
+            <li><span class="chk">✓</span> Registro documental com rastreabilidade</li>
+            <li><span class="chk">✓</span> Canal de denúncia anônimo e rastreável</li>
+            <li><span class="chk">✓</span> Relatório técnico para PGR / GRO</li>
+            <li><span class="chk">✓</span> Evidência de ações de cuidado institucional</li>
+            <li><span class="chk">✓</span> Pronto para fiscalização do MTE e licitações</li>
+          </ul>
+        </div>
+        <div class="compliance-visual reveal">
+          <div class="metric-card">
+            <div class="num">NR-1</div>
+            <div class="lbl">Portaria MTE&nbsp;1.419/2024 atendida</div>
+          </div>
+          <div class="metric-card">
+            <div class="num">PGR</div>
+            <div class="lbl">Relatório técnico automático</div>
+          </div>
+          <div class="metric-card">
+            <div class="num">0</div>
+            <div class="lbl">Dados pessoais expostos</div>
+          </div>
+          <div class="metric-card">
+            <div class="num">24/7</div>
+            <div class="lbl">Monitoramento contínuo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       DEPOIMENTOS
+  ═══════════════════════════════════════════ -->
+  <section class="testimonials">
+    <div class="container">
+      <p class="section-label reveal">Quem já usa</p>
+      <h2 class="section-title reveal">O que os clientes dizem</h2>
+      <p class="section-sub reveal">Empresas que transformaram compliance em vantagem competitiva.</p>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Antes da plataforma, estávamos completamente expostos. Hoje temos relatórios prontos para qualquer fiscalização e nosso índice de afastamentos caiu."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">CR</div>
+            <div>
+              <div class="testimonial-name">Carlos R.</div>
+              <div class="testimonial-role">Gerente de RH · Indústria metalúrgica</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"O totem mudou a percepção dos colaboradores. Eles sentem que a empresa se importa. As denúncias vieram à tona de forma segura e conseguimos agir."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">AP</div>
+            <div>
+              <div class="testimonial-name">Ana P.</div>
+              <div class="testimonial-role">Coordenadora SESMT · Logística</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Ganhamos um processo licitatório em que a concorrência não tinha documentação psicossocial. O relatório PDF foi o diferencial que fechou o contrato."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">MF</div>
+            <div>
+              <div class="testimonial-name">Marcos F.</div>
+              <div class="testimonial-role">Diretor Administrativo · Serviços</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       PREÇOS
+  ═══════════════════════════════════════════ -->
+  <section class="pricing" id="precos">
+    <div class="container">
+      <p class="section-label reveal">Planos</p>
+      <h2 class="section-title reveal">Simples, transparente e sem surpresas</h2>
+      <p class="section-sub reveal">Um único plano com tudo que sua empresa precisa para estar em conformidade com a NR-1.</p>
+
+      <div class="pricing-grid">
+
+        <!-- PLANO ESSENCIAL -->
+        <div class="pricing-card reveal">
+          <div class="pricing-name">Essencial</div>
+          <div class="pricing-price">
+            <span class="pricing-currency">R$</span>
+            <span class="pricing-amount">79</span>
+            <span class="pricing-period">,90&nbsp;/mês</span>
+          </div>
+          <p class="pricing-desc">Para pequenas empresas que precisam iniciar a conformidade com a NR-1.</p>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features">
+            <li><span class="ico ok">✓</span> 1 totem ativo</li>
+            <li><span class="ico ok">✓</span> Dashboard de indicadores</li>
+            <li><span class="ico ok">✓</span> Canal de denúncia anônimo</li>
+            <li><span class="ico ok">✓</span> Alertas por e-mail</li>
+            <li><span class="ico ok">✓</span> Relatório em PDF básico</li>
+            <li class="dim"><span class="ico off">✕</span> Múltiplos totens</li>
+            <li class="dim"><span class="ico off">✕</span> Relatório para auditoria/MTE</li>
+            <li class="dim"><span class="ico off">✕</span> Campanhas AET</li>
+          </ul>
+          <a href="#interesse" class="pricing-cta ghost">Começar agora</a>
+        </div>
+
+        <!-- PLANO PROFISSIONAL (destaque) -->
+        <div class="pricing-card featured reveal">
+          <span class="pricing-popular">⚡ Mais escolhido</span>
+          <div class="pricing-name">Profissional</div>
+          <div class="pricing-price">
+            <span class="pricing-currency">R$</span>
+            <span class="pricing-amount">119</span>
+            <span class="pricing-period">,90&nbsp;/mês</span>
+          </div>
+          <p class="pricing-desc">Acesso ilimitado a todas as funcionalidades. Para empresas que levam compliance a sério.</p>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features">
+            <li><span class="ico ok">✓</span> <strong>Totens ilimitados</strong></li>
+            <li><span class="ico ok">✓</span> <strong>Usuários ilimitados</strong></li>
+            <li><span class="ico ok">✓</span> Dashboard completo + filtros avançados</li>
+            <li><span class="ico ok">✓</span> Canal de denúncia anônimo e rastreável</li>
+            <li><span class="ico ok">✓</span> Alertas automáticos configuráveis</li>
+            <li><span class="ico ok">✓</span> <strong>Relatório PDF para auditoria / MTE</strong></li>
+            <li><span class="ico ok">✓</span> Campanhas de avaliação AET</li>
+            <li><span class="ico ok">✓</span> Assinatura técnica no relatório</li>
+          </ul>
+          <a href="#interesse" class="pricing-cta primary">Quero uma demonstração →</a>
+        </div>
+
+        <!-- PLANO ENTERPRISE -->
+        <div class="pricing-card reveal">
+          <div class="pricing-name">Enterprise</div>
+          <div class="pricing-price">
+            <span class="pricing-amount" style="font-size:2rem; padding-bottom:4px;">Sob consulta</span>
+          </div>
+          <p class="pricing-desc">Para grupos empresariais, redes de franquia e consultorias com múltiplas empresas.</p>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features">
+            <li><span class="ico ok">✓</span> Tudo do plano Profissional</li>
+            <li><span class="ico ok">✓</span> <strong>Multi-empresa (SaaS)</strong></li>
+            <li><span class="ico ok">✓</span> Painel master centralizado</li>
+            <li><span class="ico ok">✓</span> Comparativo entre unidades</li>
+            <li><span class="ico ok">✓</span> Onboarding dedicado</li>
+            <li><span class="ico ok">✓</span> Suporte prioritário</li>
+            <li><span class="ico ok">✓</span> SLA contratual</li>
+            <li><span class="ico ok">✓</span> Nota fiscal e contrato formal</li>
+          </ul>
+          <a href="#interesse" class="pricing-cta ghost">Falar com especialista</a>
+        </div>
+
+      </div>
+
+      <p class="pricing-note reveal">
+        <strong>Sem taxa de setup · Sem fidelidade · Cancele quando quiser.</strong><br />
+        Todos os planos incluem suporte por e-mail e acesso imediato após a contratação.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       TENHO INTERESSE — CTA
+  ═══════════════════════════════════════════ -->
+  <section class="interest" id="interesse">
+    <div class="interest-bg"></div>
+    <div class="container">
+      <div class="interest-inner">
+        <span class="emoji reveal">🚀</span>
+        <h2 class="reveal">Tenho interesse!</h2>
+        <p class="reveal">
+          Preencha seus dados e nossa equipe entrará em contato para
+          apresentar a plataforma, tirar dúvidas e oferecer uma demonstração gratuita.
+        </p>
+
+        <div class="interest-form" id="interestForm">
+          <!-- FIELDS -->
+          <div class="form-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="nome">Nome completo</label>
+                <input class="form-input" type="text" id="nome" placeholder="Seu nome" autocomplete="name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="empresa">Empresa</label>
+                <input class="form-input" type="text" id="empresa" placeholder="Nome da empresa" autocomplete="organization" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="email">
+                📧&nbsp; E-mail corporativo <span style="color:var(--danger)">*</span>
+              </label>
+              <input class="form-input" type="email" id="email" placeholder="seuemail@empresa.com.br" autocomplete="email" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="whatsapp">
+                💬&nbsp; WhatsApp <span style="color:var(--danger)">*</span>
+              </label>
+              <input class="form-input" type="tel" id="whatsapp" placeholder="(11) 99999-9999" autocomplete="tel" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cargo">Cargo</label>
+                <select class="form-select" id="cargo">
+                  <option value="" disabled selected>Selecione</option>
+                  <option>RH / Recursos Humanos</option>
+                  <option>SESMT / SST</option>
+                  <option>Direção / C-Level</option>
+                  <option>Jurídico / Compliance</option>
+                  <option>TI / Tecnologia</option>
+                  <option>Outro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="funcionarios">Nº de colaboradores</label>
+                <select class="form-select" id="funcionarios">
+                  <option value="" disabled selected>Selecione</option>
+                  <option>Até 50</option>
+                  <option>51 – 200</option>
+                  <option>201 – 500</option>
+                  <option>501 – 1.000</option>
+                  <option>Acima de 1.000</option>
+                </select>
+              </div>
+            </div>
+
+            <button class="btn-submit" id="btnSubmit" type="button" onclick="handleSubmit()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+              Quero uma demonstração gratuita
+            </button>
+
+            <p class="form-note">
+              Ao enviar, você concorda com nossa
+              <a href="#">Política de Privacidade</a>.
+              Não enviamos spam. Seus dados são usados apenas para contato.
+            </p>
+          </div>
+
+          <!-- SUCCESS -->
+          <div class="form-success">
+            <div class="success-icon">✓</div>
+            <h3>Mensagem enviada!</h3>
+            <p>Recebemos seu interesse. Nossa equipe entrará em contato em breve — verifique seu e-mail e WhatsApp.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer>
+    <div class="footer-logo">NR-1 Fácil</div>
+    <p>Gestão psicossocial descomplicada &nbsp;·&nbsp; Conformidade NR-1 &nbsp;·&nbsp; &copy; 2026</p>
+  </footer>
+
+  <script>
+    /* ── Scroll-reveal ── */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    /* ── WhatsApp mask ── */
+    document.getElementById('whatsapp').addEventListener('input', function () {
+      let v = this.value.replace(/\D/g, '');
+      if (v.length > 11) v = v.slice(0, 11);
+      if (v.length > 6)      v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+      else if (v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+      else if (v.length > 0) v = `(${v}`;
+      this.value = v;
+    });
+
+    /* ── Submit ── */
+    function handleSubmit() {
+      const email = document.getElementById('email').value.trim();
+      const whatsapp = document.getElementById('whatsapp').value.trim();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        shakeField('email'); return;
+      }
+      if (!whatsapp || whatsapp.replace(/\D/g,'').length < 10) {
+        shakeField('whatsapp'); return;
+      }
+
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Enviando...`;
+
+      fetch('/interesse/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: document.getElementById('nome').value.trim(),
+          empresa: document.getElementById('empresa').value.trim(),
+          email,
+          whatsapp,
+          cargo: document.getElementById('cargo').value,
+          num_funcionarios: document.getElementById('funcionarios').value,
+        }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            document.getElementById('interestForm').classList.add('is-sent');
+          } else {
+            btn.disabled = false;
+            btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Quero uma demonstração gratuita`;
+            alert(data.error || 'Erro ao enviar. Tente novamente.');
+          }
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Quero uma demonstração gratuita`;
+          alert('Erro de conexão. Verifique sua internet e tente novamente.');
+        });
+    }
+
+    function shakeField(id) {
+      const el = document.getElementById(id);
+      el.style.borderColor = 'var(--danger)';
+      el.style.animation = 'none';
+      el.offsetHeight; /* reflow */
+      el.style.animation = 'shake .4s ease';
+      setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 1000);
+    }
+
+    /* ── Shake animation ── */
+    const style = document.createElement('style');
+    style.textContent = `@keyframes shake {
+      0%,100%{ transform:translateX(0) }
+      20%{ transform:translateX(-6px) }
+      40%{ transform:translateX(6px) }
+      60%{ transform:translateX(-4px) }
+      80%{ transform:translateX(4px) }
+    }`;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

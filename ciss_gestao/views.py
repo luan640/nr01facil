@@ -31,6 +31,8 @@ from django.core.files.base import ContentFile
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_headers
 from datetime import date, datetime, timedelta
 from uuid import uuid4
@@ -59,6 +61,7 @@ from apps.core.models import (
     JobFunction,
     HelpRequest,
     HelpRequestActionHistory,
+    LandingInteresse,
     MoodRecord,
     MoodType,
     Report,
@@ -516,7 +519,33 @@ def home(request):
         ):
             return redirect('master-dashboard')
         return redirect('dashboard')
-    return redirect('login')
+    return render(request, 'landing/index.html')
+
+
+@require_http_methods(['POST'])
+@csrf_exempt
+def landing_interesse(request):
+    """Recebe os dados do formulário 'Tenho interesse' da landing page."""
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'Payload inválido.'}, status=400)
+
+    email = (payload.get('email') or '').strip()
+    whatsapp = (payload.get('whatsapp') or '').strip()
+
+    if not email or not whatsapp:
+        return JsonResponse({'ok': False, 'error': 'E-mail e WhatsApp são obrigatórios.'}, status=422)
+
+    LandingInteresse.objects.create(
+        nome=payload.get('nome', '').strip()[:150],
+        empresa=payload.get('empresa', '').strip()[:200],
+        email=email[:254],
+        whatsapp=whatsapp[:20],
+        cargo=payload.get('cargo', '')[:20],
+        num_funcionarios=payload.get('num_funcionarios', '')[:20],
+    )
+    return JsonResponse({'ok': True})
 
 
 def is_ajax_request(request):

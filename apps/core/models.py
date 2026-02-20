@@ -594,3 +594,41 @@ class Report(StandardPeriodModel):
     class Meta(StandardPeriodModel.Meta):
         db_table = 'reports'
         ordering = ['-record_date', '-created_at']
+
+
+class LandingInteresse(models.Model):
+    """Leads capturados pelo formulário 'Tenho interesse' da landing page."""
+
+    CARGO_CHOICES = [
+        ('rh', 'RH / Recursos Humanos'),
+        ('sesmt', 'SESMT / SST'),
+        ('direcao', 'Direção / C-Level'),
+        ('juridico', 'Jurídico / Compliance'),
+        ('ti', 'TI / Tecnologia'),
+        ('outro', 'Outro'),
+    ]
+
+    PORTE_CHOICES = [
+        ('ate50', 'Até 50'),
+        ('51_200', '51 – 200'),
+        ('201_500', '201 – 500'),
+        ('501_1000', '501 – 1.000'),
+        ('1000+', 'Acima de 1.000'),
+    ]
+
+    nome = models.CharField('Nome', max_length=150, blank=True, default='')
+    empresa = models.CharField('Empresa', max_length=200, blank=True, default='')
+    email = models.EmailField('E-mail')
+    whatsapp = models.CharField('WhatsApp', max_length=20)
+    cargo = models.CharField('Cargo', max_length=20, choices=CARGO_CHOICES, blank=True, default='')
+    num_funcionarios = models.CharField('Nº de colaboradores', max_length=20, choices=PORTE_CHOICES, blank=True, default='')
+    criado_em = models.DateTimeField('Recebido em', auto_now_add=True)
+
+    class Meta:
+        db_table = 'landing_interesse'
+        ordering = ['-criado_em']
+        verbose_name = 'Interesse (landing page)'
+        verbose_name_plural = 'Interesses (landing page)'
+
+    def __str__(self) -> str:
+        return f'{self.email} – {self.empresa or "sem empresa"} ({self.criado_em:%d/%m/%Y %H:%M})'

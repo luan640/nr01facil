@@ -108,10 +108,12 @@ from .views import (
     campaign_qr,
     healthz,
     home,
+    landing_interesse,
 )
 
 urlpatterns = [
     path('', home, name='home'),
+    path('interesse/', landing_interesse, name='landing-interesse'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('admin/', admin.site.urls),
     path('auth/login/', TenantLoginView.as_view(), name='login'),

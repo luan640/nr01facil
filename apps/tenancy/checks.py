@@ -20,7 +20,10 @@ def validate_company_field(app_configs=None, **kwargs):
             'UserProfile',
         }:
             continue
-        if model._meta.app_label == 'core' and model.__name__ == 'TechnicalResponsible':
+        if model._meta.app_label == 'core' and model.__name__ in {
+            'TechnicalResponsible',
+            'LandingInteresse',
+        }:
             continue
         if not any(field.name == 'company' for field in model._meta.fields):
             errors.append(

@@ -6,6 +6,7 @@ from .models import (
     Complaint,
     Department,
     GHE,
+    LandingInteresse,
     MoodRecord,
     Report,
     RiskIndicator,
@@ -131,3 +132,12 @@ class TotemAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return Totem.all_objects.all()
+
+
+@admin.register(LandingInteresse)
+class LandingInteresseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nome', 'email', 'whatsapp', 'empresa', 'cargo', 'num_funcionarios', 'criado_em')
+    list_filter = ('cargo', 'num_funcionarios', 'criado_em')
+    search_fields = ('nome', 'email', 'empresa', 'whatsapp')
+    readonly_fields = ('criado_em',)
+    ordering = ('-criado_em',)
