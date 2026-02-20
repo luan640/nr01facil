@@ -17,6 +17,7 @@ def validate_company_field(app_configs=None, **kwargs):
             'Consultancy',
             'ConsultancyMembership',
             'CompanyMembership',
+            'UserProfile',
         }:
             continue
         if model._meta.app_label == 'core' and model.__name__ == 'TechnicalResponsible':

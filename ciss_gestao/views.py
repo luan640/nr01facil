@@ -14,7 +14,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, Paginator
 from django.db import transaction
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
@@ -67,15 +67,17 @@ from apps.core.models import (
     Totem,
 )
 from masterdata.models import MasterReportSettings
-from apps.tenancy.models import Company, CompanyMembership, Consultancy, ConsultancyMembership
+from apps.tenancy.models import Company, CompanyMembership, Consultancy, ConsultancyMembership, UserProfile
 from apps.tenancy.defaults import (
     DEFAULT_CANONICAL_COMPLAINT_TYPES,
     normalize_complaint_label,
 )
 from apps.tenancy.session import (
+    company_has_empresa_access,
     get_active_memberships_for_user,
     get_active_consultancy_memberships_for_user,
     get_membership_for_company,
+    get_user_consultancy_id,
     resolve_default_company_id,
     user_has_company_access,
     user_is_consultancy_owner,
@@ -95,6 +97,22 @@ except ImportError:  # optional dependency in local setup
 
 
 logger = logging.getLogger(__name__)
+DEFAULT_DASHBOARD_CACHE_TTL_SECONDS = 20
+
+
+def build_dashboard_metrics_cache_key(
+    company_id,
+    period_start,
+    period_end,
+    totem_id=None,
+    department_id=None,
+    ghe_id=None,
+):
+    return (
+        f'dashboard:metrics:{company_id}:'
+        f'{period_start.isoformat()}:{period_end.isoformat()}:'
+        f't{totem_id or 0}:d{department_id or 0}:g{ghe_id or 0}'
+    )
 
 
 def build_period_metrics(company_id, period_start, period_end, sentiment_labels):
@@ -504,7 +522,6 @@ def home(request):
 def is_ajax_request(request):
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
-
 def is_master_user(request):
     return bool(getattr(request, 'user', None) and request.user.is_authenticated and request.user.is_superuser)
 
@@ -592,7 +609,8 @@ class TenantLoginView(LoginView):
 
     def get_success_url(self):
         user = self.request.user
-        consultancy_id = getattr(self.request, 'consultancy_id', None)
+        # Derive consultancy from the user's membership (slug-based URL no longer used)
+        consultancy_id = get_user_consultancy_id(user)
         if user.is_superuser:
             return reverse('master-dashboard')
         if user_is_consultancy_owner(user, consultancy_id):
@@ -660,14 +678,47 @@ class DashboardView(LoginRequiredMixin, View):
         selected_totem_id, selected_totem_slug = self._resolve_totem_filter(request, active_totems)
         selected_department_id, selected_department_label = self._resolve_department_filter(request, active_departments)
         selected_ghe_id, selected_ghe_label = self._resolve_ghe_filter(request, active_ghes)
-        metrics, chart_data = self._build_metrics_and_charts(
-            company_id,
-            period_start,
-            period_end,
-            selected_totem_id,
-            selected_department_id,
-            selected_ghe_id,
-        )
+        metrics = None
+        chart_data = None
+        if company_id:
+            cache_key = build_dashboard_metrics_cache_key(
+                company_id,
+                period_start,
+                period_end,
+                totem_id=selected_totem_id,
+                department_id=selected_department_id,
+                ghe_id=selected_ghe_id,
+            )
+            cached_payload = cache.get(cache_key)
+            if isinstance(cached_payload, dict):
+                metrics = cached_payload.get('metrics')
+                chart_data = cached_payload.get('chart_data')
+            if metrics is None or chart_data is None:
+                metrics, chart_data = self._build_metrics_and_charts(
+                    company_id,
+                    period_start,
+                    period_end,
+                    selected_totem_id,
+                    selected_department_id,
+                    selected_ghe_id,
+                )
+                cache.set(
+                    cache_key,
+                    {
+                        'metrics': metrics,
+                        'chart_data': chart_data,
+                    },
+                    timeout=DEFAULT_DASHBOARD_CACHE_TTL_SECONDS,
+                )
+        else:
+            metrics, chart_data = self._build_metrics_and_charts(
+                company_id,
+                period_start,
+                period_end,
+                selected_totem_id,
+                selected_department_id,
+                selected_ghe_id,
+            )
         default_totem_slug = active_totems[0].slug if active_totems else None
         context = {
             'username': request.user.username,
@@ -685,10 +736,17 @@ class DashboardView(LoginRequiredMixin, View):
             'selected_department_id': selected_department_id or '',
             'selected_ghe_id': selected_ghe_id or '',
             'can_manage_access': bool(
-                company_id and user_is_company_admin(
-                    request.user,
-                    int(company_id),
-                    consultancy_id=getattr(request, 'consultancy_id', None),
+                company_id and (
+                    request.user.is_superuser
+                    or user_is_consultancy_owner(
+                        request.user,
+                        getattr(request, 'consultancy_id', None),
+                    )
+                    or user_is_company_admin(
+                        request.user,
+                        int(company_id),
+                        consultancy_id=getattr(request, 'consultancy_id', None),
+                    )
                 )
             ),
             'is_master': request.user.is_superuser,
@@ -848,6 +906,8 @@ class DashboardView(LoginRequiredMixin, View):
             period_end,
             mood_qs,
             complaint_qs,
+            mood_count=mood_count,
+            complaint_count=complaint_count,
             totem_id=totem_id,
         )
         return metrics, charts
@@ -874,6 +934,8 @@ class DashboardView(LoginRequiredMixin, View):
         period_end,
         mood_qs,
         complaint_qs,
+        mood_count=0,
+        complaint_count=0,
         totem_id=None,
     ):
         weekday_labels = [
@@ -978,17 +1040,10 @@ class DashboardView(LoginRequiredMixin, View):
         ]
 
         complaint_by_type_qs = (
-            Complaint.all_objects.filter(
-                company_id=company_id,
-                record_date__gte=period_start,
-                record_date__lte=period_end,
-            )
-            .values('category')
+            complaint_qs.values('category')
             .annotate(total=Count('id'))
             .order_by('-total')
         )
-        if totem_id:
-            complaint_by_type_qs = complaint_by_type_qs.filter(totem_id=totem_id)
         complaint_by_type_labels = [
             dict(Complaint.CATEGORY_CHOICES).get(item['category'], item['category'])
             for item in complaint_by_type_qs
@@ -1033,7 +1088,7 @@ class DashboardView(LoginRequiredMixin, View):
                 }
             )
 
-        current_total = mood_qs.count() + complaint_qs.count()
+        current_total = int(mood_count or 0) + int(complaint_count or 0)
         return {
             'mood_distribution': {
                 'labels': mood_distribution_labels,
@@ -1099,12 +1154,11 @@ class ConsultancyOwnerOrMasterRequiredMixin(LoginRequiredMixin):
             return super().dispatch(request, *args, **kwargs)
 
         consultancy_id = getattr(request, 'consultancy_id', None)
-        if consultancy_id is None:
-            raise PermissionDenied('Consultoria nao informada na URL.')
 
         membership = get_active_consultancy_memberships_for_user(request.user).filter(
             consultancy_id=consultancy_id,
-        ).first()
+        ).first() if consultancy_id is not None else None
+
         if membership is None:
             raise PermissionDenied('Usuario sem acesso a consultoria ativa.')
         if membership.role not in ConsultancyMembership.OWNER_ROLES:
@@ -1157,7 +1211,6 @@ class MasterDashboardView(MasterRequiredMixin, View):
         companies_qs = Company.objects.order_by('name')
         if consultancy_id is not None:
             companies_qs = companies_qs.filter(consultancy_id=consultancy_id)
-        active_companies_qs = companies_qs.filter(is_active=True)
         total_companies = companies_qs.count()
         active_companies = companies_qs.filter(is_active=True).count()
         campaigns_qs = Campaign.all_objects.all()
@@ -1171,7 +1224,6 @@ class MasterDashboardView(MasterRequiredMixin, View):
         return {
             'active_menu': 'master-dashboard',
             'is_master': True,
-            'companies': list(active_companies_qs.only('id', 'name')),
             'total_companies': total_companies,
             'active_companies': active_companies,
             'total_campaigns': total_campaigns,
@@ -1232,6 +1284,58 @@ class MasterCompanyMetricsView(MasterRequiredMixin, View):
                     'labels': segment_labels,
                     'values': segment_values,
                 },
+            }
+        )
+
+
+class MasterCompanyOptionsView(MasterRequiredMixin, View):
+    def get(self, request):
+        consultancy_id = getattr(request, 'consultancy_id', None)
+        query = (request.GET.get('q') or '').strip()
+        raw_page = (request.GET.get('page') or '1').strip()
+        raw_page_size = (request.GET.get('page_size') or '10').strip()
+        try:
+            page = max(int(raw_page), 1)
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            page_size = max(int(raw_page_size), 1)
+        except (TypeError, ValueError):
+            page_size = 10
+        page_size = min(page_size, 50)
+
+        companies_qs = Company.objects.filter(is_active=True)
+        if consultancy_id is not None:
+            companies_qs = companies_qs.filter(consultancy_id=consultancy_id)
+        if query:
+            companies_qs = companies_qs.filter(name__icontains=query)
+        companies_qs = companies_qs.order_by('name')
+
+        paginator = Paginator(companies_qs.only('id', 'name'), page_size)
+        try:
+            page_obj = paginator.page(page)
+        except EmptyPage:
+            return JsonResponse(
+                {
+                    'companies': [],
+                    'page': page,
+                    'page_size': page_size,
+                    'has_next': False,
+                    'total': paginator.count,
+                }
+            )
+
+        companies = [
+            {'id': company.id, 'name': company.name}
+            for company in page_obj.object_list
+        ]
+        return JsonResponse(
+            {
+                'companies': companies,
+                'page': page_obj.number,
+                'page_size': page_size,
+                'has_next': page_obj.has_next(),
+                'total': paginator.count,
             }
         )
 
@@ -1366,7 +1470,7 @@ class CompanyListView(ConsultancyOwnerOrMasterRequiredMixin, View):
     @method_decorator(cache_page(30))
     def get(self, request):
         consultancy_id = getattr(request, 'consultancy_id', None)
-        companies_qs = Company.objects.order_by('name')
+        companies_qs = Company.objects.order_by('-created_at', '-id')
         if consultancy_id is not None:
             companies_qs = companies_qs.filter(consultancy_id=consultancy_id)
         search_name = (request.GET.get('name') or '').strip()
@@ -1562,6 +1666,118 @@ class CompanyDeleteView(ConsultancyOwnerOrMasterRequiredMixin, View):
         return redirect('companies-list')
 
 
+class CompanyPortalAccessCreateView(ConsultancyOwnerOrMasterRequiredMixin, View):
+    """
+    Cria o acesso de portal da empresa (usuario do tipo EMPRESA).
+    Regra: cada empresa pode ter no maximo 1 acesso deste tipo.
+    """
+
+    def post(self, request, company_id):
+        consultancy_id = getattr(request, 'consultancy_id', None)
+        company_qs = Company.objects.filter(pk=company_id)
+        if consultancy_id is not None:
+            company_qs = company_qs.filter(consultancy_id=consultancy_id)
+        company = get_object_or_404(company_qs)
+
+        if company_has_empresa_access(company.id):
+            messages.error(
+                request,
+                f'A empresa "{company.name}" ja possui um acesso ativo. '
+                'Cada empresa pode ter no maximo 1 acesso de portal.',
+            )
+            return redirect('companies-list')
+
+        form = CompanyPortalAccessForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, collect_form_errors(form))
+            return redirect('companies-list')
+
+        user_model = get_user_model()
+        email = (form.cleaned_data['email'] or '').strip().lower()
+        if user_model.objects.filter(email__iexact=email).exists():
+            messages.error(request, 'Ja existe um usuario com este e-mail.')
+            return redirect('companies-list')
+
+        # Deriva username do e-mail (mesmo algoritmo do InternalUserCreateView)
+        local = (email.split('@', 1)[0] if '@' in email else email).strip().lower()
+        base = re.sub(r'[^a-z0-9._-]+', '', local)[:130] or 'empresa'
+        username = base
+        suffix = 1
+        while user_model.objects.filter(username=username).exists():
+            suffix += 1
+            token = str(suffix)
+            username = f"{base[:150 - len(token) - 1]}-{token}"
+
+        with transaction.atomic():
+            user = user_model.objects.create_user(
+                username=username,
+                password=form.cleaned_data['password'],
+                email=email,
+                first_name=(form.cleaned_data.get('first_name') or '').strip(),
+                last_name=(form.cleaned_data.get('last_name') or '').strip(),
+                is_active=True,
+            )
+            CompanyMembership.objects.create(
+                user=user,
+                company=company,
+                role=CompanyMembership.Role.ADMIN_EMPRESA,
+                is_default=True,
+                is_active=True,
+            )
+            UserProfile.objects.create(
+                user=user,
+                user_type=UserProfile.UserType.EMPRESA,
+                registration_complete=True,
+            )
+
+        cache.clear()
+        messages.success(
+            request,
+            f'Acesso de portal criado com sucesso para "{company.name}". '
+            f'Login: {email}',
+        )
+        return redirect('companies-list')
+
+
+class CompanyPortalAccessDeleteView(ConsultancyOwnerOrMasterRequiredMixin, View):
+    """
+    Remove o acesso de portal (usuario EMPRESA) de uma empresa.
+    """
+
+    def post(self, request, company_id):
+        consultancy_id = getattr(request, 'consultancy_id', None)
+        company_qs = Company.objects.filter(pk=company_id)
+        if consultancy_id is not None:
+            company_qs = company_qs.filter(consultancy_id=consultancy_id)
+        company = get_object_or_404(company_qs)
+
+        # Localiza o usuario EMPRESA vinculado a esta empresa
+        membership = (
+            CompanyMembership.objects.select_related('user__profile')
+            .filter(
+                company=company,
+                is_active=True,
+                user__profile__user_type=UserProfile.UserType.EMPRESA,
+            )
+            .first()
+        )
+        if membership is None:
+            messages.error(request, 'Nenhum acesso de portal encontrado para esta empresa.')
+            return redirect('companies-list')
+
+        with transaction.atomic():
+            user = membership.user
+            membership.delete()
+            # Remove o usuario se nao tiver mais nenhum vinculo
+            if not CompanyMembership.objects.filter(user=user).exists():
+                user.is_active = False
+                user.save(update_fields=['is_active'])
+
+        cache.clear()
+        messages.success(request, f'Acesso de portal de "{company.name}" removido.')
+        return redirect('companies-list')
+
+
 class CampaignListView(MasterRequiredMixin, View):
     template_name = 'campaigns/list.html'
 
@@ -1695,7 +1911,12 @@ class MasterTechnicalSettingsView(MasterRequiredMixin, View):
     @method_decorator(cache_page(30))
     def get(self, request):
         report_settings = ensure_master_report_settings()
-        consultancy = getattr(request, 'consultancy', None)
+        consultancy_id = getattr(request, 'consultancy_id', None)
+        consultancy = (
+            Consultancy.objects.filter(pk=consultancy_id).first()
+            if consultancy_id
+            else None
+        )
         consultancy_access_url = self._build_consultancy_access_url(request, consultancy)
         responsibles_qs = TechnicalResponsible.objects.filter(
             is_active=True
@@ -1717,13 +1938,11 @@ class MasterTechnicalSettingsView(MasterRequiredMixin, View):
 
     @staticmethod
     def _build_consultancy_access_url(request, consultancy):
-        if not consultancy or not consultancy.slug:
-            return ''
         base_url = (getattr(settings, 'PUBLIC_APP_URL', '') or '').strip().rstrip('/')
         if not base_url:
             scheme = 'https' if request.is_secure() else 'http'
             base_url = f"{scheme}://{request.get_host()}"
-        return f"{base_url}/{consultancy.slug}/"
+        return f"{base_url}/"
 
 
 class TechnicalResponsibleCreateView(MasterRequiredMixin, View):
@@ -1875,6 +2094,18 @@ class ConsultancyProfileUpdateView(MasterRequiredMixin, View):
         if form.cleaned_data.get('logo'):
             consultancy.logo = form.cleaned_data['logo']
         consultancy.save()
+
+        # Marca cadastro completo para CONSULTORs que ainda nao finalizaram
+        # o onboarding inicial.
+        if not request.user.is_superuser:
+            try:
+                profile = request.user.profile
+                if not profile.registration_complete:
+                    profile.registration_complete = True
+                    profile.save(update_fields=['registration_complete', 'updated_at'])
+            except Exception:
+                pass
+
         cache.clear()
         messages.success(request, 'Dados da consultoria atualizados com sucesso.')
         return redirect('master-settings')
@@ -3492,10 +3723,27 @@ class CompanyAdminRequiredMixin(LoginRequiredMixin):
         except (TypeError, ValueError) as exc:
             raise PermissionDenied('Empresa de sessao invalida.') from exc
 
+        consultancy_id = getattr(request, 'consultancy_id', None)
+        is_consultancy_owner = user_is_consultancy_owner(
+            request.user,
+            consultancy_id,
+        )
+
+        # Owner da consultoria tem acesso total as empresas da consultoria ativa.
+        if is_consultancy_owner:
+            if consultancy_id is not None and not Company.objects.filter(
+                id=company_id,
+                consultancy_id=consultancy_id,
+            ).exists():
+                raise PermissionDenied('Empresa fora da consultoria ativa.')
+            request.current_company_id = company_id
+            request.current_membership = None
+            return super().dispatch(request, *args, **kwargs)
+
         membership = get_membership_for_company(
             request.user,
             company_id,
-            consultancy_id=getattr(request, 'consultancy_id', None),
+            consultancy_id=consultancy_id,
         )
         if membership is None:
             raise PermissionDenied('Usuario sem acesso a empresa da sessao.')
@@ -3766,6 +4014,23 @@ class InternalUserUpdateForm(InternalUserBaseForm):
     password = forms.CharField(widget=forms.PasswordInput, min_length=8, required=False)
 
 
+class CompanyPortalAccessForm(forms.Form):
+    """
+    Formulario para criar o acesso de portal de uma empresa-cliente
+    (usuario do tipo EMPRESA).
+    """
+
+    first_name = forms.CharField(max_length=150, required=False, label='Nome')
+    last_name = forms.CharField(max_length=150, required=False, label='Sobrenome')
+    email = forms.EmailField(required=True, label='E-mail')
+    password = forms.CharField(
+        widget=forms.PasswordInput,
+        min_length=8,
+        required=True,
+        label='Senha',
+    )
+
+
 def collect_form_errors(form):
     errors = []
     for field_name, field_errors in form.errors.items():
@@ -3793,7 +4058,12 @@ class TotemListView(CompanyAdminRequiredMixin, View):
     @method_decorator(vary_on_headers('Cookie'))
     @method_decorator(cache_page(30))
     def get(self, request):
-        totems_qs = Totem.all_objects.filter(company_id=request.current_company_id).order_by('name')
+        totems_qs = (
+            Totem.all_objects.filter(company_id=request.current_company_id)
+            .select_related('company')
+            .only('id', 'name', 'location', 'is_active', 'slug', 'company__slug')
+            .order_by('name')
+        )
         page_obj = paginate_queryset(request, totems_qs)
         context = {
             'totems': page_obj.object_list,
@@ -3915,7 +4185,12 @@ def render_complaint_types_table(request, company_id):
 
 
 def render_totems_table(request):
-    totems_qs = Totem.all_objects.filter(company_id=request.current_company_id).order_by('name')
+    totems_qs = (
+        Totem.all_objects.filter(company_id=request.current_company_id)
+        .select_related('company')
+        .only('id', 'name', 'location', 'is_active', 'slug', 'company__slug')
+        .order_by('name')
+    )
     page_obj = paginate_queryset(request, totems_qs)
     return render(
         request,
@@ -4221,7 +4496,7 @@ def render_job_functions_table(request, company_id):
 
 def render_companies_table(request):
     consultancy_id = getattr(request, 'consultancy_id', None)
-    companies_qs = Company.objects.order_by('name')
+    companies_qs = Company.objects.order_by('-created_at', '-id')
     if consultancy_id is not None:
         companies_qs = companies_qs.filter(consultancy_id=consultancy_id)
     search_name = (request.GET.get('name') or '').strip()
@@ -4764,7 +5039,7 @@ class ReportCompareView(CompanyAdminRequiredMixin, View):
             consultancy_id,
         )
         companies = []
-        selected_company_id = request.current_company_id
+        selected_company_id = None if is_master else request.current_company_id
         selected_company = None
 
         if is_master:
@@ -4780,16 +5055,12 @@ class ReportCompareView(CompanyAdminRequiredMixin, View):
                     candidate_id,
                     consultancy_id=consultancy_id,
                 ):
-                    request.session['company_id'] = candidate_id
-                    request.current_company_id = candidate_id
                     selected_company_id = candidate_id
                 elif (not request.user.is_superuser) and Company.objects.filter(
                     id=candidate_id,
                     consultancy_id=consultancy_id,
                     is_active=True,
                 ).exists():
-                    request.session['company_id'] = candidate_id
-                    request.current_company_id = candidate_id
                     selected_company_id = candidate_id
         selected_company_qs = Company.objects.filter(pk=selected_company_id)
         if getattr(request, 'consultancy_id', None) is not None:
@@ -4866,10 +5137,10 @@ class ReportCompareView(CompanyAdminRequiredMixin, View):
             'selected_company_id': selected_company_id,
             'selected_company': selected_company,
             'assessment_label': assessment_label,
-            'company_id': request.current_company_id,
+            'company_id': None,
             'is_master': is_master,
             'active_menu': 'reports',
-            'can_manage_access': True,
+            'can_manage_access': False,
             'report_compare_notice': report_compare_notice,
         }
         return render(request, self.template_name, context)

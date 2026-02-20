@@ -557,6 +557,10 @@ body {
   justify-content: center;
 }
 
+.master-company-filter {
+  margin-top: 16px;
+}
+
 @media (max-width: 1200px) {
   .master-metrics-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -571,7 +575,7 @@ body {
 
 .master-charts {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 18px;
 }
@@ -601,9 +605,29 @@ body {
 
 .master-segment-grid {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
   align-items: center;
+}
+
+.master-segment-grid > div {
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.master-segment-grid > .master-segment-list {
+  place-items: stretch;
+}
+
+.master-segment-grid canvas {
+  display: block;
+}
+
+#master-segment-pie {
+  display: block;
+  max-width: 100%;
+  max-height: 280px;
 }
 
 @media (max-width: 520px) {
@@ -615,6 +639,11 @@ body {
 .master-segment-list {
   display: grid;
   gap: 8px;
+  align-content: center;
+  justify-items: stretch;
+  width: min(100%, 360px);
+  margin-left: auto;
+  text-align: left;
 }
 
 .master-segment-item {
@@ -622,6 +651,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
   font-size: 0.82rem;
   color: #334155;
 }
@@ -681,6 +711,121 @@ body {
 
 .master-company-form select {
   min-width: 260px;
+}
+
+.company-select {
+  position: relative;
+}
+
+.company-select__trigger {
+  width: 100%;
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font: inherit;
+  background: #fff;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.company-select__trigger::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #475569;
+  border-bottom: 2px solid #475569;
+  transform: rotate(45deg);
+  margin-left: auto;
+}
+
+.company-select__trigger.is-loading {
+  color: #64748b;
+}
+
+.company-select__trigger.is-loading::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(71, 85, 105, 0.25);
+  border-top-color: #475569;
+  margin-right: 6px;
+  animation: companySelectSpin 0.85s linear infinite;
+}
+
+@keyframes companySelectSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.company-select__trigger--error {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+
+.company-select__dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.12);
+  display: none;
+  z-index: 1300;
+}
+
+.company-select.is-open .company-select__dropdown {
+  display: grid;
+  gap: 8px;
+}
+
+.company-select__dropdown input[type='text'] {
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font: inherit;
+  background: #fff;
+}
+
+.company-select__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+}
+
+.company-select__option {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.company-select__option:hover,
+.company-select__option:focus-visible {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.company-select__empty {
+  color: var(--slate-600);
+  font-size: 0.85rem;
 }
 
 .card {
@@ -755,6 +900,18 @@ body {
 .tooltip:focus-within .tooltip__text {
   opacity: 1;
   visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Abre o popup para a esquerda (usar quando o tooltip fica perto da borda direita) */
+.tooltip--left .tooltip__text {
+  left: auto;
+  right: 110%;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.tooltip--left:hover .tooltip__text,
+.tooltip--left:focus-within .tooltip__text {
   transform: translateY(-50%) translateX(0);
 }
 
@@ -1685,7 +1842,7 @@ body {
   border-radius: 16px;
   border: 1px solid var(--slate-200);
   box-shadow: 0 28px 60px rgba(2, 19, 13, 0.3);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .modal-card--wizard {

@@ -237,3 +237,74 @@ class TenantModel(models.Model):
             if company_id is not None:
                 self.company_id = company_id
         super().save(*args, **kwargs)
+
+
+class UserProfile(models.Model):
+    """
+    Estende o usuario de autenticacao do Django com o tipo de acesso na
+    plataforma.
+
+    Tipos de usuario:
+      - CONSULTOR: criado pelo ADM; pode criar N empresas; precisa completar
+        o cadastro da consultoria apos o primeiro login.
+      - EMPRESA: criado pelo CONSULTOR; acesso unico por empresa; representa
+        o login da empresa-cliente na plataforma.
+
+    O ADM nao precisa de perfil -- e identificado por ``is_superuser=True``.
+    """
+
+    class UserType(models.TextChoices):
+        CONSULTOR = 'CONSULTOR', 'Consultor'
+        EMPRESA = 'EMPRESA', 'Empresa'
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='profile',
+    )
+    user_type = models.CharField(
+        max_length=20,
+        choices=UserType.choices,
+    )
+    # Usado para CONSULTORs: marca se o cadastro da consultoria foi preenchido
+    # apos o primeiro login.
+    registration_complete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_profiles'
+
+    def __str__(self) -> str:
+        return f'{self.user} ({self.get_user_type_display()})'
+
+    # ------------------------------------------------------------------
+    # Validacao de regra de negocio: empresa so pode ter 1 acesso
+    # ------------------------------------------------------------------
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.user_type == self.UserType.EMPRESA:
+            # A empresa ja deve ter um CompanyMembership no momento em que o
+            # perfil e criado. Verifica se alguma outra empresa ja esta
+            # associada a uma empresa-cliente.
+            membership = (
+                CompanyMembership.objects.filter(user=self.user)
+                .select_related('company')
+                .first()
+            )
+            if membership:
+                company = membership.company
+                existing = (
+                    UserProfile.objects.filter(
+                        user_type=self.UserType.EMPRESA,
+                        user__company_memberships__company=company,
+                    )
+                    .exclude(user=self.user)
+                    .exists()
+                )
+                if existing:
+                    raise ValidationError(
+                        f'A empresa "{company}" ja possui um acesso ativo. '
+                        'Cada empresa pode ter no maximo 1 acesso.'
+                    )

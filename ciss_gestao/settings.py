@@ -90,8 +90,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'apps.tenancy.middleware.ConsultancyPathMiddleware',
     'apps.tenancy.middleware.CompanyContextMiddleware',
+    'apps.tenancy.middleware.ConsultorOnboardingMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -272,7 +272,6 @@ TENANCY_EXEMPT_PATH_PREFIXES = [
     '/campaigns/',
     '/__debug__/',
 ]
-
 LOGIN_URL = '/auth/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/auth/login/'

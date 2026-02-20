@@ -43,7 +43,7 @@
         </label>
           <a class="auth-link" href="{% url 'password_reset' %}">Redefinir acesso</a>
       </div>
-      <button type="submit" class="auth-submit" data-loading-text="Acessando...">Inicializar conexão</button>
+      <button type="submit" class="auth-submit" data-loading-text="Acessando...">Acessar</button>
       {% if next %}
         <input type="hidden" name="next" value="{{ next }}" />
       {% endif %}

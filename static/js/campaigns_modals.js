@@ -101,6 +101,12 @@
         select.selectedIndex = 0;
       }
     });
+    const asyncSelects = form.querySelectorAll('[data-company-async-select]');
+    asyncSelects.forEach((root) => {
+      if (typeof root.__companySelectReset === 'function') {
+        root.__companySelectReset();
+      }
+    });
   };
 
   const setButtonLoading = (button) => {
@@ -116,10 +122,199 @@
     };
   };
 
+  const initCompanyAsyncSelects = () => {
+    const roots = document.querySelectorAll('[data-company-async-select]');
+    roots.forEach((selectRoot) => {
+      if (selectRoot.dataset.companySelectBound === '1') return;
+      selectRoot.dataset.companySelectBound = '1';
+
+      const trigger = selectRoot.querySelector('[data-company-select-trigger]');
+      const label = selectRoot.querySelector('[data-company-select-label]');
+      const valueInput = selectRoot.querySelector('[data-company-select-value]');
+      const dropdown = selectRoot.querySelector('[data-company-select-dropdown]');
+      const list = selectRoot.querySelector('[data-company-select-list]');
+      const searchInput = selectRoot.querySelector('[data-company-search]');
+      const optionsUrl = selectRoot.dataset.companyOptionsUrl || '';
+      const pageSize = Number(selectRoot.dataset.pageSize || '10');
+
+      if (!trigger || !label || !valueInput || !dropdown || !list || !optionsUrl) {
+        return;
+      }
+
+      let page = 0;
+      let loading = false;
+      let hasNext = true;
+      const seenIds = new Set();
+      let currentQuery = '';
+      let debounceTimer = null;
+
+      const setOpen = (isOpen) => {
+        selectRoot.classList.toggle('is-open', isOpen);
+        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (isOpen) {
+          dropdown.style.display = 'block';
+          if (searchInput) searchInput.focus();
+          if (page === 0 && !loading) {
+            resetAndLoad();
+          }
+        } else {
+          dropdown.style.display = '';
+        }
+      };
+
+      const setListMessage = (message) => {
+        list.innerHTML = '';
+        const item = document.createElement('li');
+        item.className = 'company-select__empty';
+        item.textContent = message;
+        list.appendChild(item);
+      };
+
+      const setBottomLoading = (isLoading) => {
+        const existing = list.querySelector('[data-company-loading]');
+        if (isLoading) {
+          if (existing) return;
+          const item = document.createElement('li');
+          item.className = 'company-select__empty';
+          item.dataset.companyLoading = '1';
+          item.textContent = 'Carregando...';
+          list.appendChild(item);
+        } else if (existing) {
+          existing.remove();
+        }
+      };
+
+      const appendCompanies = (companies) => {
+        companies.forEach((company) => {
+          const id = String(company.id);
+          if (seenIds.has(id)) return;
+          seenIds.add(id);
+
+          const item = document.createElement('li');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'company-select__option';
+          button.dataset.companyId = id;
+          button.textContent = company.name;
+          button.addEventListener('click', () => {
+            valueInput.value = id;
+            label.textContent = company.name;
+            trigger.classList.remove('company-select__trigger--error');
+            setOpen(false);
+          });
+          item.appendChild(button);
+          list.appendChild(item);
+        });
+      };
+
+      const loadNextPage = async () => {
+        if (loading || !hasNext) return;
+        loading = true;
+        try {
+          const nextPage = page + 1;
+          if (nextPage === 1) {
+            setListMessage('Carregando...');
+          } else {
+            setBottomLoading(true);
+          }
+          const response = await fetch(
+            `${optionsUrl}?page=${encodeURIComponent(nextPage)}&page_size=${encodeURIComponent(pageSize)}&q=${encodeURIComponent(currentQuery)}`,
+            {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+              credentials: 'same-origin',
+            }
+          );
+          if (!response.ok) throw new Error('request_failed');
+          const payload = await response.json();
+          const companies = Array.isArray(payload.companies) ? payload.companies : [];
+
+          if (nextPage === 1) {
+            list.innerHTML = '';
+            if (companies.length === 0) {
+              setListMessage('Sem empresas');
+            }
+          }
+
+          appendCompanies(companies);
+          page = payload.page || nextPage;
+          hasNext = Boolean(payload.has_next);
+        } catch (err) {
+          if (page === 0) {
+            setListMessage('Erro ao carregar');
+          }
+        } finally {
+          setBottomLoading(false);
+          loading = false;
+        }
+      };
+
+      const resetAndLoad = () => {
+        page = 0;
+        hasNext = true;
+        seenIds.clear();
+        loadNextPage();
+      };
+
+      selectRoot.__companySelectReset = () => {
+        page = 0;
+        hasNext = true;
+        seenIds.clear();
+        currentQuery = '';
+        if (searchInput) searchInput.value = '';
+        list.innerHTML = '';
+        valueInput.value = '';
+        label.textContent = 'Selecione';
+      };
+
+      selectRoot.__companySelectSetValue = (id, name) => {
+        valueInput.value = id || '';
+        label.textContent = name || 'Selecione';
+        trigger.classList.remove('company-select__trigger--error');
+      };
+
+      trigger.addEventListener('click', () => {
+        setOpen(!selectRoot.classList.contains('is-open'));
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!selectRoot.contains(event.target)) {
+          setOpen(false);
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setOpen(false);
+        }
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          const nextQuery = searchInput.value.trim();
+          if (nextQuery === currentQuery) return;
+          currentQuery = nextQuery;
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            resetAndLoad();
+          }, 300);
+        });
+      }
+
+      list.addEventListener('scroll', () => {
+        if (!hasNext || loading) return;
+        const threshold = 32;
+        if (list.scrollTop + list.clientHeight >= list.scrollHeight - threshold) {
+          loadNextPage();
+        }
+      });
+    });
+  };
+
   document.addEventListener('click', (event) => {
     const openButton = event.target.closest('[data-open-modal]');
     if (openButton) {
       openModal(openButton.getAttribute('data-open-modal'));
+      initCompanyAsyncSelects();
       return;
     }
 
@@ -161,7 +356,13 @@
       if (!editForm) return;
       editForm.action = editButton.dataset.updateUrl || '';
       editForm.querySelector('#edit_campaign_title').value = editButton.dataset.title || '';
-      editForm.querySelector('#edit_campaign_company').value = editButton.dataset.companyId || '';
+      const asyncSelect = editForm.querySelector('[data-company-async-select]');
+      if (asyncSelect && typeof asyncSelect.__companySelectSetValue === 'function') {
+        asyncSelect.__companySelectSetValue(
+          editButton.dataset.companyId || '',
+          editButton.dataset.companyName || 'Selecione'
+        );
+      }
       editForm.querySelector('#edit_campaign_start').value = editButton.dataset.startDate || '';
       editForm.querySelector('#edit_campaign_end').value = editButton.dataset.endDate || '';
       editForm.querySelector('#edit_campaign_status').value = editButton.dataset.status || '';
@@ -239,4 +440,5 @@
   });
 
   consumeInlineNotices();
+  initCompanyAsyncSelects();
 })();

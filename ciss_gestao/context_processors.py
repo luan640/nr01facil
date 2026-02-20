@@ -1,4 +1,4 @@
-from apps.tenancy.models import Company
+from apps.tenancy.models import Company, Consultancy
 from apps.tenancy.session import get_membership_for_company, user_is_consultancy_owner
 
 
@@ -18,10 +18,13 @@ def current_company(request):
     consultancy_name = ''
     consultancy_logo_url = ''
     user_role_label = ''
-    consultancy = getattr(request, 'consultancy', None)
-    if consultancy is not None:
-        consultancy_name = consultancy.name or ''
-        consultancy_logo_url = _safe_file_url(getattr(consultancy, 'logo', None))
+
+    # Load the consultancy object from the id set by CompanyContextMiddleware
+    if consultancy_id is not None:
+        consultancy = Consultancy.objects.filter(pk=consultancy_id).only('name', 'logo').first()
+        if consultancy:
+            consultancy_name = consultancy.name or ''
+            consultancy_logo_url = _safe_file_url(getattr(consultancy, 'logo', None))
 
     if company_id:
         company_qs = Company.objects.filter(pk=company_id)

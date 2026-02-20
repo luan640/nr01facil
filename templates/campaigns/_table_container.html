@@ -55,6 +55,7 @@
             data-update-url="{% url 'campaigns-update' campaign.id %}"
             data-title="{{ campaign.title }}"
             data-company-id="{{ campaign.company_id }}"
+            data-company-name="{{ campaign.company.name }}"
             data-response-count="{{ campaign.responses_count|default:0 }}"
             data-employee-count="{{ campaign.company.employee_count|default:0 }}"
             data-start-date="{{ campaign.start_date|date:'Y-m-d' }}"

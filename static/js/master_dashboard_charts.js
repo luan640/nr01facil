@@ -24,21 +24,16 @@
   const clearLoaders = () => {
     const loaders = document.querySelectorAll('.master-chart-loading.is-visible');
     loaders.forEach((loader) => loader.classList.remove('is-visible'));
+    const trigger = document.querySelector('[data-company-select-trigger]');
+    if (trigger) {
+      trigger.classList.remove('is-loading');
+    }
   };
 
   const initCharts = () => {
     const content = document.querySelector('.content[data-page="master-dashboard"]');
     if (!content) return;
     clearLoaders();
-    if (activeController) {
-      try {
-        activeController.abort();
-      } catch (err) {
-        // ignore abort failures
-      }
-      activeController = null;
-      inFlight = false;
-    }
     const metricsUrl = content.getAttribute('data-master-metrics-url') || '';
     const select = document.getElementById('master_company_id');
     if (!metricsUrl || !select) {
@@ -68,6 +63,16 @@
     if (content.dataset.masterChartsInit === '1') return;
     content.dataset.masterChartsInit = '1';
     chartReadyAttempts = 0;
+
+    if (activeController) {
+      try {
+        activeController.abort();
+      } catch (err) {
+        // ignore abort failures
+      }
+      activeController = null;
+      inFlight = false;
+    }
 
     const hideLoading = () => {
       clearLoaders();
@@ -118,6 +123,7 @@
           ],
         },
         options: {
+          responsive: false,
           cutout: '62%',
           plugins: { legend: { display: false } },
         },
@@ -202,11 +208,7 @@
 
     select.addEventListener('change', () => loadMetrics(select.value));
     hideLoading();
-    requestAnimationFrame(() => loadMetrics(select.value));
-    window.addEventListener('pageshow', () => {
-      hideLoading();
-      requestAnimationFrame(() => loadMetrics(select.value));
-    });
+    renderEmpty();
     window.addEventListener('pagehide', hideLoading);
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -229,7 +231,11 @@
 
   const observeContent = () => {
     const observer = new MutationObserver(() => {
-      initCharts();
+      // Rebind charts only when the page content node is swapped, not on local UI mutations.
+      const content = document.querySelector('.content[data-page="master-dashboard"]');
+      if (!content || content.dataset.masterChartsInit !== '1') {
+        initCharts();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
   };

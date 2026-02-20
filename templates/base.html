@@ -97,6 +97,7 @@
           const page = content.getAttribute('data-page') || '';
           if (page.includes('companies')) {
             load("{% static 'js/companies_modals.js' %}");
+            load("{% static 'js/table_async.js' %}");
           }
           if (page.includes('campaigns')) {
             load("{% static 'js/campaigns_modals.js' %}");
@@ -148,8 +149,12 @@
             load("{% static 'js/master_technical_modals.js' %}");
             load("{% static 'js/table_async.js' %}");
           }
+          if (page.includes('reports-compare')) {
+            load("{% static 'js/reports_compare.js' %}");
+          }
           if (page.includes('master-dashboard')) {
             load("https://cdn.jsdelivr.net/npm/chart.js");
+            load("{% static 'js/master_company_select.js' %}");
             load("{% static 'js/master_dashboard_charts.js' %}");
           }
           if (page.includes('dashboard')) {
@@ -176,6 +181,8 @@
           if (parsed.origin !== window.location.origin) return;
           if (!/^https?:$/.test(parsed.protocol)) return;
           if (parsed.pathname.startsWith('/__debug__/')) return;
+          // Avoid duplicated heavy requests for dashboard-like pages.
+          if (parsed.pathname.includes('/dashboard/')) return;
 
           prefetchCache.add(parsed.href);
           try {

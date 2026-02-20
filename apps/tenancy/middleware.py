@@ -3,87 +3,19 @@ from urllib.parse import quote
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, render
-from django.urls import get_script_prefix, reverse, set_script_prefix
+from django.urls import reverse
 
 from .context import reset_current_company_id, set_current_company_id
-from .models import Company, Consultancy
+from .models import Company
 from .session import (
+    consultor_registration_complete,
     get_active_memberships_for_user,
+    get_user_consultancy_id,
+    is_consultor,
     resolve_default_company_id,
     user_has_company_access,
     user_is_consultancy_owner,
 )
-
-
-class ConsultancyPathMiddleware:
-    EXEMPT_PREFIXES = (
-        '/admin/',
-        '/static/',
-        '/media/',
-        '/healthz/',
-        '/__debug__/',
-    )
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        original_prefix = get_script_prefix()
-        consultancy = self._resolve_consultancy(request)
-        request.consultancy = consultancy
-        request.consultancy_id = consultancy.id if consultancy else None
-        request.consultancy_slug = consultancy.slug if consultancy else None
-
-        if consultancy:
-            prefix = f'/{consultancy.slug}'
-            self._strip_prefix(request, prefix)
-            set_script_prefix(f'{prefix}/')
-
-        try:
-            response = self.get_response(request)
-        finally:
-            set_script_prefix(original_prefix)
-
-        if consultancy:
-            self._scope_redirect(response, consultancy.slug)
-        return response
-
-    def _resolve_consultancy(self, request):
-        path = request.path_info or '/'
-        if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
-            return None
-        pieces = [part for part in path.split('/') if part]
-        if not pieces:
-            return None
-        slug = pieces[0].strip().lower()
-        if not slug:
-            return None
-        return Consultancy.objects.filter(slug=slug, is_active=True).first()
-
-    @staticmethod
-    def _strip_prefix(request, prefix: str) -> None:
-        path_info = request.path_info or '/'
-        if not path_info.startswith(prefix):
-            return
-        stripped = path_info[len(prefix):] or '/'
-        if not stripped.startswith('/'):
-            stripped = f'/{stripped}'
-        request.path_info = stripped
-        request.path = stripped
-        request.META['PATH_INFO'] = stripped
-        request.META['SCRIPT_NAME'] = prefix
-
-    @staticmethod
-    def _scope_redirect(response, slug: str) -> None:
-        location = response.headers.get('Location')
-        if not location or not location.startswith('/'):
-            return
-        scoped_prefix = f'/{slug}/'
-        if location.startswith(scoped_prefix):
-            return
-        if location.startswith('/admin/'):
-            return
-        response.headers['Location'] = f"/{slug}{location}"
 
 
 class CompanyContextMiddleware:
@@ -91,6 +23,14 @@ class CompanyContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Resolve consultancy from the authenticated user's membership.
+        # This replaces the previous URL-slug-based approach.
+        request.consultancy_id = (
+            get_user_consultancy_id(request.user)
+            if request.user.is_authenticated
+            else None
+        )
+
         if self._is_exempt(request.path):
             token = set_current_company_id(None)
             try:
@@ -123,7 +63,7 @@ class CompanyContextMiddleware:
                     not get_active_memberships_for_user(
                         request.user,
                         consultancy_id=getattr(request, 'consultancy_id', None),
-                    ).exists()
+                    )
                 ):
                     return render(request, 'errors/inactive_company.html', status=403)
                 return self._redirect_to_company_select(request)
@@ -172,23 +112,14 @@ class CompanyContextMiddleware:
         return default_company_id
 
     def _extract_company_id(self, request):
-        consultancy_id = getattr(request, 'consultancy_id', None)
         header_name = settings.TENANCY_COMPANY_HEADER
         raw_company_id = request.headers.get(header_name)
         if raw_company_id is None:
             return None
         try:
-            company_id = int(raw_company_id)
+            return int(raw_company_id)
         except ValueError as exc:
             raise PermissionDenied(f'Invalid {header_name} value.') from exc
-
-        if consultancy_id is not None and not Company.objects.filter(
-            id=company_id,
-            consultancy_id=consultancy_id,
-            is_active=True,
-        ).exists():
-            raise PermissionDenied('Company does not belong to active consultancy.')
-        return company_id
 
     @staticmethod
     def _is_exempt(path: str) -> bool:
@@ -205,3 +136,42 @@ class CompanyContextMiddleware:
         if request.headers.get('HX-Request') == 'true':
             response.headers['HX-Redirect'] = target
         return response
+
+
+class ConsultorOnboardingMiddleware:
+    """
+    Redireciona CONSULTORs que ainda nao completaram o cadastro da consultoria
+    para a pagina de configuracoes (master-settings), onde podem preencher
+    CNPJ, razao social e logo.
+
+    Exempcoes: caminhos de admin, auth, static, media e a propria pagina de
+    configuracoes (para evitar loop infinito).
+    """
+
+    EXEMPT_SUFFIXES = (
+        '/admin/',
+        '/auth/',
+        '/static/',
+        '/media/',
+        '/healthz/',
+        '/__debug__/',
+        '/master/settings/',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if (
+            request.user.is_authenticated
+            and is_consultor(request.user)
+            and not consultor_registration_complete(request.user)
+            and not self._is_exempt(request.path)
+        ):
+            settings_url = reverse('master-settings')
+            return redirect(settings_url)
+        return self.get_response(request)
+
+    @staticmethod
+    def _is_exempt(path: str) -> bool:
+        return any(path.startswith(suffix) for suffix in ConsultorOnboardingMiddleware.EXEMPT_SUFFIXES)

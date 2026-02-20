@@ -62,12 +62,22 @@
           {% csrf_token %}
           <div class="form-field"><label for="create_campaign_title">Titulo</label><input id="create_campaign_title" name="title" required maxlength="255" /></div>
           <div class="form-field">
-            <label for="create_campaign_company">Empresa</label>
-            <select id="create_campaign_company" name="company_id" required>
-              {% for company in companies %}
-                <option value="{{ company.id }}">{{ company.name }}</option>
-              {% endfor %}
-            </select>
+            <label for="create_campaign_company_trigger">Empresa</label>
+            <div
+              class="company-select"
+              data-company-async-select
+              data-company-options-url="{% url 'master-company-options' %}"
+              data-page-size="10"
+            >
+              <button id="create_campaign_company_trigger" class="company-select__trigger" type="button" data-company-select-trigger aria-expanded="false">
+                <span data-company-select-label>Selecione</span>
+              </button>
+              <input type="hidden" name="company_id" required data-company-select-value />
+              <div class="company-select__dropdown" data-company-select-dropdown>
+                <input type="text" name="company_search" placeholder="Buscar empresa..." autocomplete="off" data-company-search />
+                <ul class="company-select__list" data-company-select-list></ul>
+              </div>
+            </div>
           </div>
           <div class="form-field"><label for="create_campaign_start">Data inicial</label><input id="create_campaign_start" type="date" name="start_date" required /></div>
           <div class="form-field"><label for="create_campaign_end">Data final</label><input id="create_campaign_end" type="date" name="end_date" required /></div>
@@ -92,12 +102,22 @@
           <input type="hidden" name="force_finish" value="" />
           <div class="form-field"><label for="edit_campaign_title">Titulo</label><input id="edit_campaign_title" name="title" required maxlength="255" /></div>
           <div class="form-field">
-            <label for="edit_campaign_company">Empresa</label>
-            <select id="edit_campaign_company" name="company_id" required>
-              {% for company in companies %}
-                <option value="{{ company.id }}">{{ company.name }}</option>
-              {% endfor %}
-            </select>
+            <label for="edit_campaign_company_trigger">Empresa</label>
+            <div
+              class="company-select"
+              data-company-async-select
+              data-company-options-url="{% url 'master-company-options' %}"
+              data-page-size="10"
+            >
+              <button id="edit_campaign_company_trigger" class="company-select__trigger" type="button" data-company-select-trigger aria-expanded="false">
+                <span data-company-select-label>Selecione</span>
+              </button>
+              <input type="hidden" name="company_id" required data-company-select-value />
+              <div class="company-select__dropdown" data-company-select-dropdown>
+                <input type="text" name="company_search" placeholder="Buscar empresa..." autocomplete="off" data-company-search />
+                <ul class="company-select__list" data-company-select-list></ul>
+              </div>
+            </div>
           </div>
           <div class="form-field"><label for="edit_campaign_start">Data inicial</label><input id="edit_campaign_start" type="date" name="start_date" required /></div>
           <div class="form-field"><label for="edit_campaign_end">Data final</label><input id="edit_campaign_end" type="date" name="end_date" required /></div>

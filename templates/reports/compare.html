@@ -12,8 +12,8 @@
 
 {% block content %}
 <div class="app-layout">
-  {% include "partials/sidebar.html" with active_menu="reports" can_manage_access=True %}
-  <main class="content">
+  {% include "partials/sidebar.html" with active_menu="reports" can_manage_access=False %}
+  <main class="content" data-page="reports-compare">
     <header class="content__header">
       <div>
         <h1 class="content__title">Comparar campanhas</h1>
@@ -419,72 +419,5 @@
 
 {% block extra_scripts %}
   <script src="{% static 'js/dashboard_sidebar.js' %}"></script>
-  <script>
-    (function () {
-      var companySelect = document.querySelector('[data-company-select]');
-      if (!companySelect) return;
-
-      var reportSelects = document.querySelectorAll('[data-report-select]');
-      var hasSelectedCompany = Boolean(companySelect.value);
-      reportSelects.forEach(function (select) {
-        select.disabled = !hasSelectedCompany;
-      });
-
-      companySelect.addEventListener('change', function () {
-        var companyId = companySelect.value;
-        if (!companyId) {
-          reportSelects.forEach(function (select) {
-            select.innerHTML = '<option value="">Selecione</option>';
-            select.disabled = true;
-          });
-          return;
-        }
-
-        reportSelects.forEach(function (select) {
-          select.innerHTML = '<option value="">Carregando...</option>';
-          select.disabled = true;
-        });
-
-        fetch(window.location.pathname + '?load_campaigns=1&company_id=' + encodeURIComponent(companyId), {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        })
-          .then(function (response) {
-            if (!response.ok) {
-              throw new Error('Falha ao carregar campanhas');
-            }
-            return response.json();
-          })
-          .then(function (data) {
-            var campaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
-            reportSelects.forEach(function (select) {
-              select.innerHTML = '<option value="">Selecione</option>';
-              campaigns.forEach(function (campaign) {
-                var option = document.createElement('option');
-                option.value = String(campaign.id);
-                option.textContent = campaign.label;
-                select.appendChild(option);
-              });
-              select.disabled = false;
-            });
-          })
-          .catch(function () {
-            reportSelects.forEach(function (select) {
-              select.innerHTML = '<option value="">Erro ao carregar</option>';
-              select.disabled = true;
-            });
-          });
-      });
-
-      var form = companySelect.closest('form');
-      if (form) {
-        form.addEventListener('submit', function () {
-          var submitBtn = form.querySelector('[data-compare-submit]');
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Carregando...';
-          }
-        });
-      }
-    })();
-  </script>
+  <script src="{% static 'js/reports_compare.js' %}"></script>
 {% endblock %}

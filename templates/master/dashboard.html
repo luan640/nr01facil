@@ -20,19 +20,6 @@
         <h1 class="content__title">Painel do consultor</h1>
         <p class="content__subtitle">Visão geral das empresas cadastradas.</p>
       </div>
-      <form method="post" action="{% url 'master-dashboard' %}" class="master-company-form">
-        {% csrf_token %}
-        <input type="hidden" name="next_url" value="{% url 'dashboard' %}" />
-        <div class="form-field">
-          <label for="master_company_id">Empresa</label>
-          <select id="master_company_id" name="company_id" required>
-            {% for company in companies %}
-              <option value="{{ company.id }}">{{ company.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-          <button class="btn btn--primary" type="submit" data-loading-text="Acessando...">Acessar</button>
-      </form>
     </header>
 
     {% if messages %}
@@ -74,6 +61,26 @@
       </article>
     </section>
 
+    <section class="master-company-filter">
+      <form method="post" action="{% url 'master-dashboard' %}" class="master-company-form" data-company-select-form data-company-options-url="{% url 'master-company-options' %}" data-page-size="10">
+        {% csrf_token %}
+        <input type="hidden" name="next_url" value="{% url 'dashboard' %}" />
+        <div class="form-field">
+          <label for="master_company_trigger">Empresa</label>
+          <div class="company-select" data-company-select>
+            <button id="master_company_trigger" class="company-select__trigger" type="button" data-company-select-trigger aria-expanded="false">
+              <span data-company-select-label>Selecione</span>
+            </button>
+            <input type="hidden" id="master_company_id" name="company_id" required data-company-select-value />
+            <div class="company-select__dropdown" data-company-select-dropdown>
+              <input type="text" id="master_company_search" name="company_search" placeholder="Buscar empresa..." autocomplete="off" data-company-search />
+              <ul class="company-select__list" data-company-select-list></ul>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
     <section class="master-charts">
       <article class="master-chart-card">
         <div class="master-chart-loading" data-master-loading="history">
@@ -103,4 +110,5 @@
 
 {% block extra_scripts %}
   <script src="{% static 'js/dashboard_sidebar.js' %}"></script>
+  <script src="{% static 'js/master_company_select.js' %}"></script>
 {% endblock %}
