@@ -19,12 +19,18 @@ def current_company(request):
     consultancy_logo_url = ''
     user_role_label = ''
 
-    # Load the consultancy object from the id set by CompanyContextMiddleware
-    if consultancy_id is not None:
-        consultancy = Consultancy.objects.filter(pk=consultancy_id).only('name', 'logo').first()
-        if consultancy:
-            consultancy_name = consultancy.name or ''
-            consultancy_logo_url = _safe_file_url(getattr(consultancy, 'logo', None))
+    # Load the consultancy object from the id set by CompanyContextMiddleware.
+    # For superusers without a linked consultancy, fall back to the first active one.
+    # If a view already resolved and cached the object on the request, reuse it.
+    consultancy = getattr(request, '_cached_consultancy', None)
+    if consultancy is None:
+        if consultancy_id is not None:
+            consultancy = Consultancy.objects.filter(pk=consultancy_id).only('name', 'logo').first()
+        elif getattr(request, 'user', None) and request.user.is_authenticated and request.user.is_superuser:
+            consultancy = Consultancy.objects.filter(is_active=True).only('name', 'logo').first()
+    if consultancy:
+        consultancy_name = consultancy.name or ''
+        consultancy_logo_url = _safe_file_url(getattr(consultancy, 'logo', None))
 
     if company_id:
         company_qs = Company.objects.filter(pk=company_id)

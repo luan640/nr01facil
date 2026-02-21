@@ -3,18 +3,12 @@
     window.__masterDashboardChartsBound = true;
   }
 
-  const colors = [
-    '#1d4ed8',
-    '#0ea5e9',
-    '#22c55e',
-    '#f59e0b',
-    '#ef4444',
-    '#8b5cf6',
-    '#0f766e',
+  const segColors = [
+    '#4f46e5', '#0ea5e9', '#22c55e', '#f59e0b',
+    '#ef4444', '#8b5cf6', '#0f766e', '#db2777',
   ];
 
   let historyChart = null;
-  let segmentChart = null;
   let activeController = null;
   let requestToken = 0;
   let inFlight = false;
@@ -22,12 +16,10 @@
   let chartReadyAttempts = 0;
 
   const clearLoaders = () => {
-    const loaders = document.querySelectorAll('.master-chart-loading.is-visible');
-    loaders.forEach((loader) => loader.classList.remove('is-visible'));
+    document.querySelectorAll('[data-md-loading].is-visible')
+      .forEach(el => el.classList.remove('is-visible'));
     const trigger = document.querySelector('[data-company-select-trigger]');
-    if (trigger) {
-      trigger.classList.remove('is-loading');
-    }
+    if (trigger) trigger.classList.remove('is-loading');
   };
 
   const initCharts = () => {
@@ -36,71 +28,67 @@
     clearLoaders();
     const metricsUrl = content.getAttribute('data-master-metrics-url') || '';
     const select = document.getElementById('master_company_id');
-    if (!metricsUrl || !select) {
-      delete content.dataset.masterChartsInit;
-      return;
-    }
+    if (!metricsUrl || !select) { delete content.dataset.masterChartsInit; return; }
 
     const historyCanvas = document.getElementById('master-eval-history');
-    const segmentCanvas = document.getElementById('master-segment-pie');
-    const segmentList = document.getElementById('master-segment-list');
-    const historyLoading = document.querySelector('[data-master-loading="history"]');
-    const segmentsLoading = document.querySelector('[data-master-loading="segments"]');
-    if (!historyCanvas || !segmentCanvas || !segmentList) {
-      delete content.dataset.masterChartsInit;
-      return;
-    }
+    const segmentList   = document.getElementById('master-segment-list');
+    if (!historyCanvas || !segmentList) { delete content.dataset.masterChartsInit; return; }
 
     if (typeof Chart === 'undefined') {
       chartReadyAttempts += 1;
-      if (chartReadyAttempts < 30) {
-        delete content.dataset.masterChartsInit;
-        setTimeout(initCharts, 300);
-      }
+      if (chartReadyAttempts < 30) { delete content.dataset.masterChartsInit; setTimeout(initCharts, 300); }
       return;
     }
-
     if (content.dataset.masterChartsInit === '1') return;
     content.dataset.masterChartsInit = '1';
     chartReadyAttempts = 0;
 
-    if (activeController) {
-      try {
-        activeController.abort();
-      } catch (err) {
-        // ignore abort failures
-      }
-      activeController = null;
-      inFlight = false;
-    }
+    if (activeController) { try { activeController.abort(); } catch (_) {} activeController = null; inFlight = false; }
+
+    const historyLoading  = document.querySelector('[data-md-loading="history"]');
+    const segmentsLoading = document.querySelector('[data-md-loading="segments"]');
 
     const hideLoading = () => {
       clearLoaders();
-      if (historyLoading) historyLoading.classList.remove('is-visible');
+      if (historyLoading)  historyLoading.classList.remove('is-visible');
       if (segmentsLoading) segmentsLoading.classList.remove('is-visible');
     };
 
     const renderHistory = (labels, values) => {
+      const emptyEl = document.getElementById('md-history-empty');
       if (historyChart) historyChart.destroy();
+      if (!labels.length) {
+        if (emptyEl) emptyEl.style.display = 'flex';
+        historyCanvas.style.display = 'none';
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+      historyCanvas.style.display = '';
       historyChart = new Chart(historyCanvas, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels,
-          datasets: [
-            {
-              label: 'Avaliações',
-              data: values,
-              backgroundColor: '#1d4ed8',
-              borderRadius: 8,
-              maxBarThickness: 28,
-            },
-          ],
+          datasets: [{
+            label: 'Avaliações',
+            data: values,
+            fill: true,
+            tension: 0.4,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,.12)',
+            pointBackgroundColor: '#4f46e5',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2.5,
+          }],
         },
         options: {
           responsive: true,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' avaliações' } },
+          },
           scales: {
-            y: { beginAtZero: true, ticks: { precision: 0 } },
+            y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0,0,0,.05)' } },
             x: { grid: { display: false } },
           },
         },
@@ -108,89 +96,51 @@
     };
 
     const renderSegments = (labels, values) => {
-      if (segmentChart) segmentChart.destroy();
-      segmentChart = new Chart(segmentCanvas, {
-        type: 'doughnut',
-        data: {
-          labels,
-          datasets: [
-            {
-              data: values,
-              backgroundColor: labels.map((_, idx) => colors[idx % colors.length]),
-              borderWidth: 0,
-              hoverOffset: 6,
-            },
-          ],
-        },
-        options: {
-          responsive: false,
-          cutout: '62%',
-          plugins: { legend: { display: false } },
-        },
-      });
-
-      segmentList.innerHTML = labels
-        .map((label, idx) => {
-          const value = Number(values[idx] || 0).toFixed(1);
-          const color = colors[idx % colors.length];
-          return (
-            '<div class="master-segment-item">' +
-            '<div><span class="master-segment-chip" style="background:' +
-            color +
-            ';"></span>' +
-            label +
+      if (!labels.length) {
+        segmentList.innerHTML = '<div class="md-chart-empty" style="display:flex;">Sem dados para esta empresa.</div>';
+        return;
+      }
+      const maxVal = Math.max(...values, 1);
+      segmentList.innerHTML = labels.map((label, idx) => {
+        const pct   = Number(values[idx] || 0).toFixed(1);
+        const width = ((Number(values[idx] || 0) / maxVal) * 100).toFixed(1);
+        const color = segColors[idx % segColors.length];
+        return (
+          '<div class="md-seg-item">' +
+            '<div class="md-seg-row">' +
+              '<span class="md-seg-label">' + label + '</span>' +
+              '<span class="md-seg-pct">' + pct + '%</span>' +
             '</div>' +
-            '<strong>' +
-            value +
-            '%</strong>' +
-            '</div>'
-          );
-        })
-        .join('');
-    };
-
-    const renderEmpty = () => {
-      renderHistory([], []);
-      renderSegments([], []);
+            '<div class="md-seg-track">' +
+              '<div class="md-seg-fill" style="width:' + width + '%;background:' + color + ';"></div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
     };
 
     const loadMetrics = async (companyId, attempt = 0) => {
-      if (!companyId) {
-        hideLoading();
-        return;
-      }
+      if (!companyId) { hideLoading(); return; }
       if (typeof Chart === 'undefined') {
-        if (attempt < 8) {
-          setTimeout(() => loadMetrics(companyId, attempt + 1), 200);
-        } else {
-          hideLoading();
-        }
+        if (attempt < 8) setTimeout(() => loadMetrics(companyId, attempt + 1), 200);
+        else hideLoading();
         return;
       }
-      if (activeController) {
-        activeController.abort();
-      }
+      if (activeController) activeController.abort();
       activeController = new AbortController();
       const token = ++requestToken;
       inFlight = true;
       lastLoadStart = Date.now();
-      if (historyLoading) historyLoading.classList.add('is-visible');
+      if (historyLoading)  historyLoading.classList.add('is-visible');
       if (segmentsLoading) segmentsLoading.classList.add('is-visible');
       const timeoutId = setTimeout(() => {
         if (token !== requestToken) return;
-        try {
-          activeController.abort();
-        } catch (err) {
-          // ignore abort failures
-        }
-        inFlight = false;
-        hideLoading();
-        renderEmpty();
+        try { activeController.abort(); } catch (_) {}
+        inFlight = false; hideLoading();
+        renderHistory([], []); renderSegments([], []);
       }, 6000);
       try {
-        const resp = await fetch(metricsUrl + '?company_id=' + encodeURIComponent(companyId), {
-          signal: activeController.signal,
-        });
+        const resp = await fetch(metricsUrl + '?company_id=' + encodeURIComponent(companyId), { signal: activeController.signal });
         if (!resp.ok) return;
         const data = await resp.json();
         if (token !== requestToken) return;
@@ -198,65 +148,38 @@
         renderSegments(data.segments.labels || [], data.segments.values || []);
       } catch (err) {
         if (err && err.name === 'AbortError') return;
-        renderEmpty();
+        renderHistory([], []); renderSegments([], []);
       } finally {
-        clearTimeout(timeoutId);
-        inFlight = false;
-        hideLoading();
+        clearTimeout(timeoutId); inFlight = false; hideLoading();
       }
     };
 
     select.addEventListener('change', () => loadMetrics(select.value));
     hideLoading();
-    renderEmpty();
     window.addEventListener('pagehide', hideLoading);
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        hideLoading();
-      }
-    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) hideLoading(); });
     window.addEventListener('focus', hideLoading);
     setInterval(() => {
-      if (!inFlight) {
-        hideLoading();
-        return;
-      }
-      if (Date.now() - lastLoadStart > 7000) {
-        hideLoading();
-      }
+      if (!inFlight) { hideLoading(); return; }
+      if (Date.now() - lastLoadStart > 7000) hideLoading();
     }, 2000);
   };
 
-  const onLoad = () => initCharts();
-
   const observeContent = () => {
     const observer = new MutationObserver(() => {
-      // Rebind charts only when the page content node is swapped, not on local UI mutations.
       const content = document.querySelector('.content[data-page="master-dashboard"]');
-      if (!content || content.dataset.masterChartsInit !== '1') {
-        initCharts();
-      }
+      if (!content || content.dataset.masterChartsInit !== '1') initCharts();
     });
     observer.observe(document.body, { childList: true, subtree: true });
   };
 
-  document.addEventListener('DOMContentLoaded', onLoad);
-  window.addEventListener('page:load', onLoad);
-  document.addEventListener('htmx:afterSwap', onLoad);
+  document.addEventListener('DOMContentLoaded', initCharts);
+  window.addEventListener('page:load', initCharts);
+  document.addEventListener('htmx:afterSwap', initCharts);
   document.addEventListener('htmx:beforeSwap', () => {
     const content = document.querySelector('.content[data-page="master-dashboard"]');
-    if (content) {
-      delete content.dataset.masterChartsInit;
-    }
-    if (activeController) {
-      try {
-        activeController.abort();
-      } catch (err) {
-        // ignore abort failures
-      }
-      activeController = null;
-      inFlight = false;
-    }
+    if (content) delete content.dataset.masterChartsInit;
+    if (activeController) { try { activeController.abort(); } catch (_) {} activeController = null; inFlight = false; }
     clearLoaders();
   });
   observeContent();

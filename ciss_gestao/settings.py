@@ -173,6 +173,24 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Password hashers
+# ---------------------------------------------------------------------------
+# Em desenvolvimento usamos um hasher muito mais rápido (1 k iterações) para
+# que o login não demore segundos.  Em produção mantemos o padrão do Django
+# (PBKDF2 com ~870 k iterações).
+# Após a primeira mudança: rode `python manage.py changepassword <usuario>`
+# para re-hashear a senha com o novo hasher.
+if DEBUG:
+    PASSWORD_HASHERS = [
+        'ciss_gestao.hashers.FastPBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',   # fallback para senhas antigas
+        'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+        'django.contrib.auth.hashers.ScryptPasswordHasher',
+        'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    ]
+# Em produção, Django usa os hashers padrão automaticamente.
+
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 

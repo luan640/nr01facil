@@ -169,7 +169,11 @@
         };
         const prefetchCache = new Set();
         let htmxInFlight = false;
+        let htmxSwapCompleted = false;
         let navToken = 0;
+        document.body.addEventListener('htmx:afterSwap', () => {
+          htmxSwapCompleted = true;
+        });
         const prefetch = (url) => {
           if (!url || prefetchCache.has(url) || navigator.onLine === false) return;
           let parsed;
@@ -273,9 +277,10 @@
             if (group) group.classList.add('is-open');
           }
           const token = ++navToken;
+          htmxSwapCompleted = false;
           setTimeout(() => {
             if (token !== navToken) return;
-            if (!htmxInFlight) {
+            if (!htmxInFlight && !htmxSwapCompleted) {
               window.location.href = link.href;
             }
           }, 150);

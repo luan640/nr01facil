@@ -11,99 +11,300 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    /* ── Master dashboard redesign ── */
+    .md-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .md-header__titles {}
+    .md-header__sub {
+      margin-top: 4px;
+      color: var(--text-muted, #64748b);
+      font-size: .88rem;
+    }
+    .md-header__updated {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .8rem;
+      color: var(--text-muted, #64748b);
+      white-space: nowrap;
+      padding-top: 6px;
+    }
+    /* stat cards */
+    .md-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 900px) { .md-stats { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .md-stats { grid-template-columns: 1fr; } }
+    .md-stat {
+      background: var(--card-bg, #fff);
+      border: 1px solid var(--card-border, #e8edf4);
+      border-radius: 14px;
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+    }
+    .md-stat__icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .md-stat__icon--blue  { background: #e0e7ff; color: #4f46e5; }
+    .md-stat__icon--green { background: #dcfce7; color: #16a34a; }
+    .md-stat__icon--purple{ background: #ede9fe; color: #7c3aed; }
+    .md-stat__icon--orange{ background: #ffedd5; color: #d97706; }
+    .md-stat__body { flex: 1; min-width: 0; }
+    .md-stat__label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-muted, #64748b);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 4px;
+    }
+    .md-stat__value {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--text-primary, #0f172a);
+      line-height: 1.1;
+    }
+    .md-stat__foot {
+      font-size: .78rem;
+      color: var(--text-muted, #64748b);
+      margin-top: 2px;
+    }
+    .md-stat__badge {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 2px 9px;
+    }
+    /* analysis section */
+    .md-analysis-header {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary, #0f172a);
+      margin-bottom: 12px;
+    }
+    .md-filter {
+      margin-bottom: 24px;
+    }
+    .md-filter .company-select__trigger {
+      max-width: 260px;
+    }
+    /* charts */
+    .md-charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 800px) { .md-charts { grid-template-columns: 1fr; } }
+    .md-chart-card {
+      background: var(--card-bg, #fff);
+      border: 1px solid var(--card-border, #e8edf4);
+      border-radius: 14px;
+      padding: 20px;
+      position: relative;
+    }
+    .md-chart-title {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--text-primary, #0f172a);
+      margin-bottom: 2px;
+    }
+    .md-chart-sub {
+      font-size: .75rem;
+      color: var(--text-muted, #64748b);
+      margin-bottom: 14px;
+    }
+    /* horizontal segment bars */
+    .md-seg-list { display: flex; flex-direction: column; gap: 13px; }
+    .md-seg-item { display: flex; flex-direction: column; gap: 6px; }
+    .md-seg-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .95rem;
+    }
+    .md-seg-label { color: var(--text-primary, #0f172a); font-weight: 500; }
+    .md-seg-pct   { font-weight: 700; color: var(--text-primary, #0f172a); flex-shrink: 0; margin-left: 8px; }
+    .md-seg-track {
+      height: 11px;
+      border-radius: 99px;
+      background: var(--card-border, #e8edf4);
+      overflow: hidden;
+    }
+    .md-seg-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .6s ease;
+    }
+    .md-chart-empty {
+      display: flex; align-items: center; justify-content: center;
+      height: 100px;
+      font-size: .85rem;
+      color: var(--text-muted, #64748b);
+    }
+    /* loading overlay */
+    .md-loading {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,.8);
+      border-radius: 14px;
+      display: none;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      font-size: .85rem;
+      color: var(--text-muted, #64748b);
+      z-index: 5;
+    }
+    .md-loading.is-visible { display: flex; }
+    .md-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid #e2e8f0;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 <div class="app-layout">
   {% include "partials/sidebar.html" with active_menu="master-dashboard" is_master=True %}
 
   <main class="content" data-page="master-dashboard" data-master-metrics-url="{% url 'master-metrics' %}">
-    <header class="content__header">
-      <div>
+
+    {# ── Header ── #}
+    <div class="md-header">
+      <div class="md-header__titles">
         <h1 class="content__title">Painel do consultor</h1>
-        <p class="content__subtitle">Visão geral das empresas cadastradas.</p>
+        <p class="md-header__sub">
+          Visão geral das empresas cadastradas.
+          {% if finished_campaigns_month %}
+            &nbsp;·&nbsp; <strong>{{ finished_campaigns_month }}</strong> campanha{{ finished_campaigns_month|pluralize }} encerrada{{ finished_campaigns_month|pluralize }} este mês.
+          {% endif %}
+        </p>
       </div>
-    </header>
+      <div class="md-header__updated" id="md-updated-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Atualizado agora
+      </div>
+    </div>
 
     {% if messages %}
-      <section class="stack-gap" style="margin-bottom: 16px;">
+      <section style="margin-bottom: 16px;">
         {% for message in messages %}
           <div class="notice{% if message.tags %} notice--{{ message.tags }}{% endif %}">{{ message }}</div>
         {% endfor %}
       </section>
     {% endif %}
 
-    <section class="grid master-metrics-grid">
-      <article class="card">
-        <p class="card__label">Empresas cadastradas</p>
-        <p class="card__value">{{ total_companies }}</p>
-      </article>
-      <article class="card">
-        <p class="card__label">Empresas ativas</p>
-        <p class="card__value">{{ active_companies }}</p>
-      </article>
-      <article class="card">
-        <p class="card__label">Campanhas</p>
-        <p class="card__value">{{ total_campaigns }}</p>
-      </article>
-      <article class="card">
-        <p class="card__label">Campanhas ativas</p>
-        <p class="card__value">{{ active_campaigns }}</p>
-      </article>
-      <article class="card">
-        <p class="card__label">Campanhas pausadas</p>
-        <p class="card__value">{{ paused_campaigns }}</p>
-      </article>
-      <article class="card">
-        <p class="card__label">Campanhas planejadas</p>
-        <p class="card__value">{{ planned_campaigns }}</p>
-      </article>
-      <article class="card">
-        <p class="card__label">Campanhas encerradas</p>
-        <p class="card__value">{{ finished_campaigns }}</p>
-      </article>
-    </section>
+    {# ── Stat cards ── #}
+    <div class="md-stats">
+      <div class="md-stat">
+        <div class="md-stat__icon md-stat__icon--blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        </div>
+        <div class="md-stat__body">
+          <p class="md-stat__label">Empresas Cadastradas</p>
+          <p class="md-stat__value">{{ total_companies }}</p>
+          <p class="md-stat__foot">Total</p>
+        </div>
+      </div>
 
-    <section class="master-company-filter">
+      <div class="md-stat">
+        <div class="md-stat__icon md-stat__icon--green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="md-stat__body">
+          <p class="md-stat__label">Empresas Ativas</p>
+          <p class="md-stat__value">{{ active_companies }}</p>
+          <p class="md-stat__foot">Total</p>
+        </div>
+      </div>
+
+      <div class="md-stat">
+        <div class="md-stat__icon md-stat__icon--purple">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.4 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.78a16 16 0 0 0 6.29 6.29l1.86-1.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 15.18v1.74"/></svg>
+        </div>
+        <div class="md-stat__body">
+          <p class="md-stat__label">Campanhas</p>
+          <p class="md-stat__value">{{ total_campaigns }}</p>
+          <p class="md-stat__foot">Total</p>
+        </div>
+        {% if active_campaigns %}<span class="md-stat__badge">{{ active_campaigns }} ativas</span>{% endif %}
+      </div>
+
+      <div class="md-stat">
+        <div class="md-stat__icon md-stat__icon--orange">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="md-stat__body">
+          <p class="md-stat__label">Campanhas Encerradas</p>
+          <p class="md-stat__value">{{ finished_campaigns }}</p>
+          <p class="md-stat__foot">Total</p>
+        </div>
+      </div>
+    </div>
+
+    {# ── Análise por empresa ── #}
+    <p class="md-analysis-header">Análise por empresa</p>
+    <div class="md-filter">
       <form method="post" action="{% url 'master-dashboard' %}" class="master-company-form" data-company-select-form data-company-options-url="{% url 'master-company-options' %}" data-page-size="10">
         {% csrf_token %}
         <input type="hidden" name="next_url" value="{% url 'dashboard' %}" />
-        <div class="form-field">
-          <label for="master_company_trigger">Empresa</label>
-          <div class="company-select" data-company-select>
-            <button id="master_company_trigger" class="company-select__trigger" type="button" data-company-select-trigger aria-expanded="false">
-              <span data-company-select-label>Selecione</span>
-            </button>
-            <input type="hidden" id="master_company_id" name="company_id" required data-company-select-value />
-            <div class="company-select__dropdown" data-company-select-dropdown>
-              <input type="text" id="master_company_search" name="company_search" placeholder="Buscar empresa..." autocomplete="off" data-company-search />
-              <ul class="company-select__list" data-company-select-list></ul>
-            </div>
+        <div class="company-select" data-company-select>
+          <button class="company-select__trigger" type="button" data-company-select-trigger aria-expanded="false">
+            <span data-company-select-label>Selecione</span>
+          </button>
+          <input type="hidden" id="master_company_id" name="company_id" required data-company-select-value />
+          <div class="company-select__dropdown" data-company-select-dropdown>
+            <input type="text" id="master_company_search" name="company_search" placeholder="Buscar empresa..." autocomplete="off" data-company-search />
+            <ul class="company-select__list" data-company-select-list></ul>
           </div>
         </div>
       </form>
-    </section>
+    </div>
 
-    <section class="master-charts">
-      <article class="master-chart-card">
-        <div class="master-chart-loading" data-master-loading="history">
-          <span class="master-spinner" aria-hidden="true"></span>
-          Carregando...
+    {# ── Charts ── #}
+    <div class="md-charts">
+      <div class="md-chart-card">
+        <div class="md-loading" data-md-loading="history">
+          <span class="md-spinner"></span> Carregando...
         </div>
-        <h2 class="master-chart-title">Histórico de avaliações</h2>
-        <canvas id="master-eval-history" height="120"></canvas>
-      </article>
-      <article class="master-chart-card">
-        <div class="master-chart-loading" data-master-loading="segments">
-          <span class="master-spinner" aria-hidden="true"></span>
-          Carregando...
+        <p class="md-chart-title">Histórico de avaliações</p>
+        <p class="md-chart-sub">Últimos 6 meses</p>
+        <canvas id="master-eval-history" height="160"></canvas>
+        <div class="md-chart-empty" id="md-history-empty" style="display:none;">Selecione uma empresa para ver o histórico.</div>
+      </div>
+
+      <div class="md-chart-card">
+        <div class="md-loading" data-md-loading="segments">
+          <span class="md-spinner"></span> Carregando...
         </div>
-        <h2 class="master-chart-title">Distribuição por segmento</h2>
-        <div class="master-segment-grid">
-          <div>
-            <canvas id="master-segment-pie" width="280" height="280"></canvas>
-          </div>
-          <div class="master-segment-list" id="master-segment-list"></div>
+        <p class="md-chart-title">Distribuição por segmento</p>
+        <p class="md-chart-sub" style="margin-bottom:18px;"></p>
+        <div class="md-seg-list" id="master-segment-list">
+          <div class="md-chart-empty" style="display:flex;">Selecione uma empresa para ver os segmentos.</div>
         </div>
-      </article>
-    </section>
+      </div>
+    </div>
+
   </main>
 </div>
 {% endblock %}
@@ -111,4 +312,16 @@
 {% block extra_scripts %}
   <script src="{% static 'js/dashboard_sidebar.js' %}"></script>
   <script src="{% static 'js/master_company_select.js' %}"></script>
+  <script>
+    /* update the "Atualizado" label */
+    (function () {
+      const el = document.getElementById('md-updated-label');
+      if (!el) return;
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      el.innerHTML = el.innerHTML.replace('Atualizado agora',
+        'Atualizado às ' + pad(now.getHours()) + ':' + pad(now.getMinutes()));
+    })();
+  </script>
 {% endblock %}
+

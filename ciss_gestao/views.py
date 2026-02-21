@@ -16,7 +16,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, Paginator
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -610,25 +610,40 @@ class EmailAuthenticationForm(AuthenticationForm):
     def clean(self):
         login_value = (self.cleaned_data.get('username') or '').strip()
         password = self.cleaned_data.get('password')
-        if login_value and password:
-            # Prefer e-mail lookup when user typed an address, but fall back
-            # to username authentication when no user has that e-mail.
-            if '@' in login_value:
-                user_model = get_user_model()
-                matching_users = list(
-                    user_model._default_manager.filter(email__iexact=login_value)[:2]
+
+        if login_value and password and '@' in login_value:
+            # Resolve e-mail → user em uma única query, depois verifica a
+            # senha diretamente evitando a segunda query que authenticate()
+            # faria para recuperar o mesmo usuário por username.
+            user_model = get_user_model()
+            matching_users = list(
+                user_model._default_manager.filter(email__iexact=login_value)[:2]
+            )
+            if len(matching_users) > 1:
+                raise forms.ValidationError(
+                    self.error_messages['invalid_login'],
+                    code='invalid_login',
                 )
-                if len(matching_users) == 1:
-                    self.cleaned_data['username'] = matching_users[0].get_username()
-                elif len(matching_users) > 1:
-                    raise forms.ValidationError(
-                        self.error_messages['invalid_login'],
-                        code='invalid_login',
-                    )
-                else:
-                    self.cleaned_data['username'] = login_value
-            else:
-                self.cleaned_data['username'] = login_value
+            if len(matching_users) == 1:
+                candidate = matching_users[0]
+                if candidate.check_password(password) and candidate.is_active:
+                    # Popula o cache usado por get_user() / LoginView
+                    self.user_cache = candidate
+                    # Checa conta bloqueada etc. (mesmo que AuthenticationForm)
+                    self.confirm_login_allowed(self.user_cache)
+                    # Sincroniza o campo username para que super().clean()
+                    # não precise buscar o usuário novamente.
+                    self.cleaned_data['username'] = candidate.get_username()
+                    return self.cleaned_data
+                # Senha errada ou usuário inativo: cai no fluxo padrão de
+                # erro sem revelar qual foi o motivo.
+                raise forms.ValidationError(
+                    self.error_messages['invalid_login'],
+                    code='invalid_login',
+                )
+            # Nenhum usuário com esse e-mail: tenta como username normal.
+            self.cleaned_data['username'] = login_value
+
         return super().clean()
 
 
@@ -1201,6 +1216,8 @@ class ConsultancyOwnerOrMasterRequiredMixin(LoginRequiredMixin):
 class MasterDashboardView(MasterRequiredMixin, View):
     template_name = 'master/dashboard.html'
 
+    @method_decorator(vary_on_headers('Cookie'))
+    @method_decorator(cache_page(60))
     def get(self, request):
         return render(request, self.template_name, self._build_context(request))
 
@@ -1237,29 +1254,46 @@ class MasterDashboardView(MasterRequiredMixin, View):
     def _build_context(request):
         consultancy_id = getattr(request, 'consultancy_id', None)
         today = timezone.localdate()
-        companies_qs = Company.objects.order_by('name')
+        month_start = today.replace(day=1)
+
+        companies_qs = Company.objects.all()
         if consultancy_id is not None:
             companies_qs = companies_qs.filter(consultancy_id=consultancy_id)
-        total_companies = companies_qs.count()
-        active_companies = companies_qs.filter(is_active=True).count()
+        company_counts = companies_qs.aggregate(
+            total=Count('id'),
+            active=Count('id', filter=Q(is_active=True)),
+        )
+
         campaigns_qs = Campaign.all_objects.all()
         if consultancy_id is not None:
             campaigns_qs = campaigns_qs.filter(company__consultancy_id=consultancy_id)
-        total_campaigns = campaigns_qs.count()
-        active_campaigns = campaigns_qs.filter(status=Campaign.Status.ACTIVE).count()
-        paused_campaigns = campaigns_qs.filter(status=Campaign.Status.PAUSED).count()
-        planned_campaigns = campaigns_qs.filter(status=Campaign.Status.PLANNED).count()
-        finished_campaigns = campaigns_qs.filter(status=Campaign.Status.FINISHED).count()
+        campaign_counts = campaigns_qs.aggregate(
+            total=Count('id'),
+            active=Count('id', filter=Q(status=Campaign.Status.ACTIVE)),
+            paused=Count('id', filter=Q(status=Campaign.Status.PAUSED)),
+            planned=Count('id', filter=Q(status=Campaign.Status.PLANNED)),
+            finished=Count('id', filter=Q(status=Campaign.Status.FINISHED)),
+            finished_month=Count(
+                'id',
+                filter=Q(
+                    status=Campaign.Status.FINISHED,
+                    end_date__gte=month_start,
+                    end_date__lte=today,
+                ),
+            ),
+        )
+
         return {
             'active_menu': 'master-dashboard',
             'is_master': True,
-            'total_companies': total_companies,
-            'active_companies': active_companies,
-            'total_campaigns': total_campaigns,
-            'active_campaigns': active_campaigns,
-            'paused_campaigns': paused_campaigns,
-            'planned_campaigns': planned_campaigns,
-            'finished_campaigns': finished_campaigns,
+            'total_companies': company_counts['total'],
+            'active_companies': company_counts['active'],
+            'total_campaigns': campaign_counts['total'],
+            'active_campaigns': campaign_counts['active'],
+            'paused_campaigns': campaign_counts['paused'],
+            'planned_campaigns': campaign_counts['planned'],
+            'finished_campaigns': campaign_counts['finished'],
+            'finished_campaigns_month': campaign_counts['finished_month'],
         }
 
 
@@ -1936,16 +1970,22 @@ class CampaignDeleteView(MasterRequiredMixin, View):
 class MasterTechnicalSettingsView(MasterRequiredMixin, View):
     template_name = 'master/technical_settings.html'
 
+    @staticmethod
+    def _resolve_consultancy(request):
+        """Retorna a Consultancy do request ou, para superuser, a primeira ativa."""
+        consultancy_id = getattr(request, 'consultancy_id', None)
+        if consultancy_id:
+            return Consultancy.objects.filter(pk=consultancy_id).first()
+        if request.user.is_superuser:
+            return Consultancy.objects.filter(is_active=True).first()
+        return None
+
     @method_decorator(vary_on_headers('Cookie'))
     @method_decorator(cache_page(30))
     def get(self, request):
         report_settings = ensure_master_report_settings()
-        consultancy_id = getattr(request, 'consultancy_id', None)
-        consultancy = (
-            Consultancy.objects.filter(pk=consultancy_id).first()
-            if consultancy_id
-            else None
-        )
+        consultancy = self._resolve_consultancy(request)
+        request._cached_consultancy = consultancy  # reused by context processor
         consultancy_access_url = self._build_consultancy_access_url(request, consultancy)
         responsibles_qs = TechnicalResponsible.objects.filter(
             is_active=True
@@ -2099,14 +2139,16 @@ class ConsultancyProfileUpdateView(MasterRequiredMixin, View):
     @method_decorator(never_cache)
     def post(self, request):
         consultancy_id = getattr(request, 'consultancy_id', None)
-        if consultancy_id is None:
-            messages.error(
-                request,
-                'Acesse via URL da consultoria para atualizar estes dados.',
-            )
+        if consultancy_id:
+            consultancy = get_object_or_404(Consultancy, pk=consultancy_id, is_active=True)
+        elif request.user.is_superuser:
+            consultancy = Consultancy.objects.filter(is_active=True).first()
+            if consultancy is None:
+                messages.error(request, 'Nenhuma consultoria ativa encontrada.')
+                return redirect('master-settings')
+        else:
+            messages.error(request, 'Consultoria não encontrada.')
             return redirect('master-settings')
-
-        consultancy = get_object_or_404(Consultancy, pk=consultancy_id, is_active=True)
         form = ConsultancyProfileForm(request.POST, request.FILES)
         if not form.is_valid():
             messages.error(request, collect_form_errors(form))

@@ -746,9 +746,10 @@ body {
 
 .company-select__trigger {
   width: 100%;
+  min-width: 280px;
   border: 1px solid var(--slate-200);
   border-radius: 10px;
-  padding: 7px 10px;
+  padding: 10px 14px;
   font: inherit;
   background: #fff;
   text-align: left;
@@ -815,11 +816,13 @@ body {
 }
 
 .company-select__dropdown input[type='text'] {
+  width: 100%;
   border: 1px solid var(--slate-200);
   border-radius: 10px;
   padding: 7px 10px;
   font: inherit;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .company-select__list {
